@@ -1,3 +1,5 @@
+import { getDocumentLocale } from '../i18n';
+
 export function formatPercent(value: number, digits = 1): string {
   return `${(value * 100).toFixed(digits)}%`;
 }
@@ -10,7 +12,7 @@ export function formatDate(value?: string | null): string {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(getDocumentLocale(), {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

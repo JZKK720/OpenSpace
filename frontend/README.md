@@ -1,6 +1,6 @@
-# OpenSpace Frontend
+# Cubecloud Frontend
 
-A dashboard frontend for the OpenSpace, providing skill browsing, lineage visualization, and workflow inspection.
+A dashboard frontend for Cubecloud, providing skill browsing, lineage visualization, and workflow inspection.
 
 ## Prerequisites
 
@@ -88,6 +88,36 @@ npm run build
 ```
 
 After building, start the backend and it will serve `frontend/dist` as static files automatically — no need to run the dev server.
+
+## Docker Compose
+
+If you want the dashboard packaged as a local container, run this from the repo root:
+
+```bash
+docker compose up --build -d
+```
+
+Open `http://127.0.0.1:7788` after the container becomes healthy.
+
+What this does:
+- Builds the React frontend and copies `frontend/dist` into the image.
+- Installs the Python package and starts `openspace.dashboard_server` on `0.0.0.0:7788`.
+- Persists dashboard state by mounting `./.openspace` and `./logs` into the container.
+
+Useful commands:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
+To change the exposed local port:
+
+```bash
+CUBECLOUD_PORT=8080 docker compose up --build -d
+```
+
+This Compose stack is for the **dashboard web app**. OpenSpace features that depend on direct host GUI or shell automation should still run on the host machine.
 
 ## Main Pages
 
