@@ -1,0 +1,35 @@
+FROM node:20-bookworm-slim AS frontend-builder
+
+WORKDIR /build/frontend
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+ARG VITE_API_BASE_URL=/api/v1
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+RUN npm run build
+
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+COPY pyproject.toml README.md README_CN.md requirements.txt requirements-dashboard.txt LICENSE COMMUNICATION.md ./
+COPY openspace/ ./openspace/
+COPY gdpval_bench/ ./gdpval_bench/
+COPY assets/ ./assets/
+COPY showcase/ ./showcase/
+COPY --from=frontend-builder /build/frontend/dist ./frontend/dist
+
+RUN python -m pip install --upgrade pip \
+    && python -m pip install -r requirements-dashboard.txt
+
+EXPOSE 7788
+
+CMD ["python", "-m", "openspace.dashboard_server", "--host", "0.0.0.0", "--port", "7788"]

@@ -205,12 +205,19 @@ class SkillStore:
 
         Read connection: ``query_only=ON`` pragma for safety.
         """
-        conn = sqlite3.connect(
-            str(self._db_path),
-            timeout=30.0,
-            check_same_thread=False,
-        )
-        conn.execute("PRAGMA journal_mode=WAL")
+        connect_target = str(self._db_path)
+        connect_kwargs = {
+            "timeout": 30.0,
+            "check_same_thread": False,
+        }
+
+        if read_only:
+            connect_target = f"file:{self._db_path.as_posix()}?mode=ro"
+            connect_kwargs["uri"] = True
+
+        conn = sqlite3.connect(connect_target, **connect_kwargs)
+        if not read_only:
+            conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA busy_timeout=30000")
         conn.execute("PRAGMA synchronous=NORMAL")
         conn.execute("PRAGMA cache_size=-16000")  # 16 MB

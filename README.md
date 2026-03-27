@@ -1,10 +1,8 @@
 <div align="center">
 
 <picture>
-    <img src="assets/logo.png" width="320px" style="border: none; box-shadow: none;" alt="OpenSpace Logo">
+  <img src="assets/logo.png" width="420px" style="border: none; box-shadow: none;" alt="Cubecloud Logo">
 </picture>
-
-## ✨ OpenSpace: Make Your Agents: Smarter, Low-Cost, Self-Evolving ✨
 
 | 🔋 **46% Fewer Tokens** | **💰 $11K earned in 6 Hours** | 🧬 **Self-Evolving Skills** | 🌐 **Agents Experience Sharing** |
 
@@ -47,13 +45,13 @@ Today's AI agents — [OpenClaw](https://github.com/openclaw/openclaw), [nanobot
 - **❌ Repeated Costly Failures** - How to share solutions across agents instead of repeating the same costly exploration and mistakes?
 - **❌ Poor and Unreliable Skills** - How to maintain skill reliability as tools and APIs evolve — while ensuring community-contributed skills meet rigorous quality standards?
 
-## 🎯 What is OpenSpace?
+## 🎯 What is Cubecloud?
 
 **🚀 🚀 The self-evolving engine where every task makes every agent smarter and more cost-efficient.**
 
 https://github.com/user-attachments/assets/c50f70ab-f6db-47bf-9498-3210c0f0abae
 
-OpenSpace plugs into any agent as skills and evolves it with three superpowers:
+Cubecloud plugs into any agent as skills and evolves it with three superpowers:
 
 ### 🧬 Self-Evolution
 Skills that learn and improve themselves automatically
@@ -91,15 +89,15 @@ Do more, spend less — agents that actually save you money over time.
 - Failed patterns repeat with no learning mechanism
 - Knowledge remains trapped in individual agents
 
-**✅ OpenSpace-Powered Agents**
+**✅ Cubecloud-Powered Agents**
 - Multi-layer monitoring catches problems and auto-triggers repairs
 - Successful workflows become reusable, shareable skills
 - When one agent learns something useful, all agents get that knowledge instantly
 
-### 📊 OpenSpace: Turn Your Agent into a Money-Making Coworker
+### 📊 Cubecloud: Turn Your Agent into a Money-Making Coworker
 
 **🎯 Real-World Results That Matter**
-On 50 professional tasks (**📈 [GDPVal Economic Benchmark](#-benchmark-gdpval)**) across 6 industries, OpenSpace agents earn **4.2× more money** than baseline ([ClawWork](https://github.com/HKUDS/ClawWork)) agents using the same backbone LLM (Qwen 3.5-Plus). While cutting 46% of costly tokens through skill evolution.
+On 50 professional tasks (**📈 [GDPVal Economic Benchmark](#-benchmark-gdpval)**) across 6 industries, Cubecloud agents earn **4.2× more money** than baseline ([ClawWork](https://github.com/HKUDS/ClawWork)) agents using the same backbone LLM (Qwen 3.5-Plus). While cutting 46% of costly tokens through skill evolution.
 
 <div align="center">
 <img src="assets/benchmark_kpi.png" width="100%" alt="GDPVal Benchmark — Key Results" />
@@ -121,11 +119,11 @@ On 50 professional tasks (**📈 [GDPVal Economic Benchmark](#-benchmark-gdpval)
 <img src="assets/benchmark_task_showcase.png" width="100%" alt="GDPVal Benchmark — Task Showcase by Category" />
 </div>
 
-**OpenSpace doesn't just make agents smarter** — it makes them economically viable. Real work, real money, measurable results.
+**Cubecloud doesn't just make agents smarter** — it makes them economically viable. Real work, real money, measurable results.
 
-## Use Case for Autonomous System Development with OpenSpace
+## Use Case for Autonomous System Development with Cubecloud
 
-**🖥️ [My Daily Monitor](showcase/README.md)** — OpenSpace empowers your agent to complete large-scale system development. This personal behavior monitoring system with 20+ live dashboard panels was built entirely by the agent — 60+ skills evolved from scratch through OpenSpace, demonstrating autonomous end-to-end software development capabilities.
+**🖥️ [My Daily Monitor](showcase/README.md)** — Cubecloud empowers your agent to complete large-scale system development. This personal behavior monitoring system with 20+ live dashboard panels was built entirely by the agent — 60+ skills evolved from scratch through Cubecloud, demonstrating autonomous end-to-end software development capabilities.
 
 <div align="center">
 <img src="assets/my_daily_monitor_dark.png" width="100%" alt="My Daily Monitor – Dark Mode" />
@@ -287,6 +285,18 @@ npm run dev
 
 📖 **Frontend setup guide**: [`frontend/README.md`](frontend/README.md)
 
+**Docker Compose option**
+
+If you want the dashboard packaged as a local container instead of running Python and Vite directly:
+
+```bash
+docker compose up --build -d
+```
+
+Then open `http://127.0.0.1:7788`.
+
+This container flow builds the frontend once and serves it from the Flask dashboard server. It is intended for the **web dashboard** and its persisted data (`.openspace/`, `logs/`) rather than the full host-automation runtime.
+
 <div align="center">
 <table>
 <tr>
@@ -388,7 +398,7 @@ Across 50 Phase 1 tasks, OpenSpace autonomously evolved **165 skills**. The brea
 <img src="assets/my_daily_monitor_light.png" width="90%" alt="My Daily Monitor – Light Mode" />
 </div>
 
-### How OpenSpace Built It (From Zero)
+### How Cubecloud Built It (From Zero)
 
 | Phase | What Happened | Skills |
 |-------|--------------|--------|
@@ -405,13 +415,13 @@ Across 50 Phase 1 tasks, OpenSpace autonomously evolved **165 skills**. The brea
 <img src="assets/my_daily_monitor_evograph.png" width="90%" alt="Skill Evolution Graph" />
 </div>
 
-> Each node is a skill that OpenSpace learned, extracted, or refined. The full evolution history is open-sourced in [`showcase/.openspace/openspace.db`](showcase/.openspace/openspace.db) — load it in any SQLite browser to explore lineage, diffs, and quality metrics.
+> Each node is a skill that Cubecloud learned, extracted, or refined. The full evolution history is open-sourced in [`showcase/.openspace/openspace.db`](showcase/.openspace/openspace.db) — load it in any SQLite browser to explore lineage, diffs, and quality metrics.
 
 **Full details**: [`showcase/README.md`](showcase/README.md)
 
 ---
 
-## 🏗️ OpenSpace's Framework
+## 🏗️ Cubecloud's Framework
 
 <div align="center">
 <img src="assets/framework.png" width="90%" alt="OpenSpace Framework" />
@@ -419,11 +429,11 @@ Across 50 Phase 1 tasks, OpenSpace autonomously evolved **165 skills**. The brea
 
 ### 🧬 Self-Evolution Engine
 
-The core of OpenSpace. Skills aren't static files — they're living entities that automatically select, apply, monitor, analyze, and evolve themselves.
+The core of Cubecloud. Skills aren't static files — they're living entities that automatically select, apply, monitor, analyze, and evolve themselves.
 
 #### 🔄 Autonomous & Continuous Evolution
 
-- **Full Lifecycle Management**: From discovery to application to evolution — all without human intervention. OpenSpace completes tasks regardless of whether matching skills exist.
+- **Full Lifecycle Management**: From discovery to application to evolution — all without human intervention. Cubecloud completes tasks regardless of whether matching skills exist.
 
 **Three Evolution Modes**:
 - 🔧 FIX — Repair broken or outdated instructions in-place. Same skill, new version.
@@ -558,7 +568,7 @@ OpenSpace/
 
 ## 🤝 Contribute & Roadmap
 
-We welcome contributions! OpenSpace today evolves *how to do X*. The next frontier: **evolving how agents organize doing X together**. 
+We welcome contributions! Cubecloud today evolves *how to do X*. The next frontier: **evolving how agents organize doing X together**. 
 
 Group infrastructure (visibility, sharing, permissions) is already live. What comes next:
 
@@ -571,7 +581,7 @@ Group infrastructure (visibility, sharing, permissions) is already live. What co
 
 ## 🔗 Related Projects
 
-OpenSpace builds upon the following open-source projects. We sincerely thank their authors and contributors:
+Cubecloud builds upon the following open-source projects. We sincerely thank their authors and contributors:
 
 - **[AnyTool](https://github.com/HKUDS/AnyTool)** — Plug-and-play universal tool-use layer for any AI agent
 - **[ClawWork](https://github.com/HKUDS/ClawWork)** - Transforms AI assistants into true AI coworkers
@@ -595,6 +605,8 @@ If you find OpenSpace helpful, please consider giving us a star! ⭐
   </a>
 </div>
 
+**🌟 Star us if Cubecloud helps your agent!**
+
 **🧬 Make You Agent Self-Evolve · 🌐 A Community That Grows Together · 💰 Fewer Tokens, Smarter Agents**
 
 </div>
@@ -602,7 +614,7 @@ If you find OpenSpace helpful, please consider giving us a star! ⭐
 ---
 
 <p align="center">
-  <em> ❤️ Thanks for visiting ✨ OpenSpace!</em><br><br>
+  <em> ❤️ Thanks for visiting ✨ Cubecloud!</em><br><br>
   <img src="https://visitor-badge.laobi.icu/badge?page_id=HKUDS.OpenSpace&style=for-the-badge&color=00d4ff"
   alt="Views">
 </p>
