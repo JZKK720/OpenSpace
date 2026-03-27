@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useI18n } from '../../i18n';
 import type { DiffFile, DiffLine } from '../../utils/diffParser';
 
 interface DiffViewerProps {
@@ -124,6 +125,7 @@ function buildSplitRows(lines: DiffLine[], header: string): SplitDiffRow[] {
 }
 
 export default function DiffViewer({ files }: DiffViewerProps) {
+  const { t } = useI18n();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const renderableFiles = useMemo(
     () => files.filter((file) => file.hunks.some((hunk) => hunk.lines.length > 0)),
@@ -135,14 +137,12 @@ export default function DiffViewer({ files }: DiffViewerProps) {
   }, [renderableFiles]);
 
   if (renderableFiles.length === 0) {
-    return <p className="text-[color:var(--color-muted)] text-sm">No files in diff</p>;
+    return <p className="text-[color:var(--color-muted)] text-sm">{t('diff.noFiles')}</p>;
   }
 
   const activeIndex = selectedIndex < renderableFiles.length ? selectedIndex : 0;
   const activeFile = renderableFiles[activeIndex];
   const activeHunks = activeFile.hunks.filter((hunk) => hunk.lines.length > 0);
-  const activeTabId = `diff-file-tab-${activeIndex}`;
-  const activePanelId = 'diff-file-panel';
 
   function focusTab(index: number) {
     const tab = document.querySelector<HTMLButtonElement>(`button[data-diff-tab-index="${index}"]`);
@@ -181,20 +181,15 @@ export default function DiffViewer({ files }: DiffViewerProps) {
 
   return (
     <div className="flex overflow-hidden rounded-[16px] border border-[color:var(--color-ink)] bg-[color:var(--color-surface)]" style={{ maxHeight: 460 }}>
-      <nav className="w-[200px] min-w-[200px] border-r-2 border-[color:var(--color-border-dark)] overflow-y-auto bg-[color:var(--color-surface)] p-3">
-        <ul className="flex flex-col gap-2 text-xs font-mono" role="tablist" aria-label="Diff files" aria-orientation="vertical">
+      <nav className="w-[200px] min-w-[200px] border-r-2 border-[color:var(--color-border-dark)] overflow-y-auto bg-[color:var(--color-surface)] p-3" aria-label={t('diff.filesAria')}>
+        <ul className="flex flex-col gap-2 text-xs font-mono">
           {renderableFiles.map((file, idx) => (
             <li key={file.path}>
               <button
                 type="button"
                 onClick={() => setSelectedIndex(idx)}
                 onKeyDown={(event) => handleTabKeyDown(event, idx)}
-                id={`diff-file-tab-${idx}`}
                 data-diff-tab-index={idx}
-                role="tab"
-                aria-selected={idx === activeIndex}
-                aria-controls={activePanelId}
-                tabIndex={idx === activeIndex ? 0 : -1}
                 className={`w-full truncate rounded-full border px-3 py-2 text-left transition-all duration-200 ${
                   idx === activeIndex
                     ? 'border-[color:var(--color-border-dark)] bg-[color:var(--color-border-dark)] font-bold text-[color:var(--color-ink)] shadow-[inset_0_0_0_1px_var(--color-ink)]'
@@ -209,15 +204,15 @@ export default function DiffViewer({ files }: DiffViewerProps) {
         </ul>
       </nav>
 
-      <div className="flex-1 overflow-auto bg-[color:var(--color-bg-page)]" id={activePanelId} role="tabpanel" aria-labelledby={activeTabId}>
+      <div className="flex-1 overflow-auto bg-[color:var(--color-bg-page)]">
         <div className="text-xs font-mono leading-5 min-w-[720px]">
           {activeHunks.map((hunk, hunkIdx) => {
             const rows = buildSplitRows(hunk.lines, hunk.header);
             return (
               <div key={`${activeFile.path}-hunk-${hunkIdx}`}>
                 <div className="sticky top-0 z-10 grid grid-cols-[1fr_1fr] border-y border-[color:var(--color-ink)] bg-[#CBCADB] px-3 py-1.5 text-[color:var(--color-muted)] select-none">
-                  <div>Old</div>
-                  <div>New</div>
+                  <div>{t('diff.old')}</div>
+                  <div>{t('diff.new')}</div>
                 </div>
                 <div className="sticky top-[29px] z-10 border-b border-[color:var(--color-border-dark)] bg-[color:var(--color-surface)] px-3 py-1 text-[color:var(--color-muted)] select-none">
                   {hunk.header}

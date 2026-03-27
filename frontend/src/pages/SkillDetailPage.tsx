@@ -7,6 +7,7 @@ import SkillEvolutionGraph from '../components/skill-detail/SkillEvolutionGraph'
 import SkillVersionDrawer from '../components/skill-detail/SkillVersionDrawer';
 import SkillVersionFilterBar from '../components/skill-detail/SkillVersionFilterBar';
 import { useSkillEvolutionGraphData } from '../hooks/useSkillEvolutionGraphData';
+import { useI18n } from '../i18n';
 import { formatDate } from '../utils/format';
 
 function resolveLineageGraph(skill: SkillDetail | null): SkillLineage | null {
@@ -26,6 +27,7 @@ function resolveLineageGraph(skill: SkillDetail | null): SkillLineage | null {
 const DRAWER_ANIMATION_DURATION_MS = 300;
 
 export default function SkillDetailPage() {
+  const { t } = useI18n();
   const { skillId = '' } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [skillClass, setSkillClass] = useState<SkillDetail | null>(null);
@@ -52,7 +54,7 @@ export default function SkillDetailPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load skill class');
+          setError(err instanceof Error ? err.message : t('skillDetail.errorLoad'));
         }
       } finally {
         if (!cancelled) {
@@ -97,7 +99,7 @@ export default function SkillDetailPage() {
       } catch (err) {
         if (!cancelled) {
           setSelectedVersion(null);
-          setDrawerError(err instanceof Error ? err.message : 'Failed to load selected version');
+          setDrawerError(err instanceof Error ? err.message : t('skillDetail.errorLoadVersion'));
         }
       } finally {
         if (!cancelled) {
@@ -215,20 +217,20 @@ export default function SkillDetailPage() {
   };
 
   if (loading) {
-    return <div className="p-6 text-sm text-muted">Loading skill detail…</div>;
+    return <div className="p-6 text-sm text-muted">{t('skillDetail.loading')}</div>;
   }
 
   if (error || !skillClass) {
-    return <div className="p-6 text-sm text-danger">{error ?? 'Skill not found'}</div>;
+    return <div className="p-6 text-sm text-danger">{error ?? t('skillDetail.notFound')}</div>;
   }
 
   return (
     <div className="p-6 space-y-6 relative">
       <div className="flex items-center gap-4">
-        <Link to="/skills" className="chip text-sm transition-colors hover:border-[color:var(--color-border-dark)] hover:text-ink">← Back to Skills</Link>
+        <Link to="/skills" className="chip text-sm transition-colors hover:border-[color:var(--color-border-dark)] hover:text-ink">{t('skillDetail.back')}</Link>
         <div className="min-w-0">
           <h1 className="text-3xl font-bold font-serif truncate">{skillClass.name}</h1>
-          <div className="text-sm text-muted mt-1">Skill class anchored on {skillClass.skill_id}</div>
+          <div className="text-sm text-muted mt-1">{t('skillDetail.anchoredOn', { skillId: skillClass.skill_id })}</div>
         </div>
       </div>
 
@@ -236,13 +238,13 @@ export default function SkillDetailPage() {
         <div className="flex items-start justify-between gap-6">
           <div className="space-y-3 min-w-0 flex-1">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-muted">Skill Class</div>
-              <h2 className="text-2xl font-bold font-serif mt-1">Evolution overview</h2>
+              <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('skillDetail.class')}</div>
+              <h2 className="text-2xl font-bold font-serif mt-1">{t('skillDetail.overview')}</h2>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="tag px-2 py-1">{skillClass.category}</span>
               <span className="tag px-2 py-1">{skillClass.visibility}</span>
-              <span className="tag px-2 py-1">{skillClass.is_active ? 'active tip' : 'inactive anchor'}</span>
+              <span className="tag px-2 py-1">{skillClass.is_active ? t('skillDetail.activeTip') : t('skillDetail.inactiveAnchor')}</span>
               {classSummary.origins.map((origin) => (
                 <span key={origin} className="tag px-2 py-1">{origin}</span>
               ))}
@@ -250,48 +252,48 @@ export default function SkillDetailPage() {
                 <span key={tag} className="tag px-2 py-1">{tag}</span>
               ))}
               {classSummary.tags.length > 8 ? (
-                <span className="tag px-2 py-1">+{classSummary.tags.length - 8} tags</span>
+                <span className="tag px-2 py-1">{t('common.tagsMore', { count: classSummary.tags.length - 8 })}</span>
               ) : null}
             </div>
           </div>
           <div className="shrink-0 text-right">
             <div className="text-5xl font-bold font-serif leading-none">{classSummary.bestScore.toFixed(1)}</div>
-            <div className="text-xs uppercase tracking-[0.16em] text-muted mt-2">best version score</div>
+            <div className="text-xs uppercase tracking-[0.16em] text-muted mt-2">{t('skillDetail.bestVersionScore')}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm text-muted">
           <div>
-            <div className="font-bold text-ink">Skill directory</div>
-            <div className="break-all">{skillClass.skill_dir || 'Unavailable'}</div>
+            <div className="font-bold text-ink">{t('skillDetail.skillDirectory')}</div>
+            <div className="break-all">{skillClass.skill_dir || t('common.unavailable')}</div>
           </div>
           <div>
-            <div className="font-bold text-ink">Latest version created</div>
+            <div className="font-bold text-ink">{t('skillDetail.latestVersionCreated')}</div>
             <div>{formatDate(classSummary.latestCreatedAt)}</div>
           </div>
           <div>
-            <div className="font-bold text-ink">Representative version</div>
+            <div className="font-bold text-ink">{t('skillDetail.representativeVersion')}</div>
             <div className="break-all">{skillClass.skill_id}</div>
           </div>
           <div>
-            <div className="font-bold text-ink">Representative update</div>
+            <div className="font-bold text-ink">{t('skillDetail.representativeUpdate')}</div>
             <div>{formatDate(skillClass.last_updated)}</div>
           </div>
         </div>
       </section>
 
       <section className="metrics-row">
-        <MetricCard label="Versions" value={classSummary.versionCount} hint={`Max generation ${classSummary.maxGeneration}`} />
-        <MetricCard label="Active Versions" value={classSummary.activeCount} hint={`Origins: ${classSummary.origins.length}`} />
-        <MetricCard label="Average Score" value={classSummary.averageScore.toFixed(1)} hint="Across all versions in this lineage" />
-        <MetricCard label="Selections" value={classSummary.totalSelections} hint={`Representative score ${skillClass.score.toFixed(1)}`} />
+        <MetricCard label={t('skillDetail.metricVersions')} value={classSummary.versionCount} hint={t('skillDetail.metricVersionsHint', { count: classSummary.maxGeneration })} />
+        <MetricCard label={t('skillDetail.metricActiveVersions')} value={classSummary.activeCount} hint={t('skillDetail.metricActiveVersionsHint', { count: classSummary.origins.length })} />
+        <MetricCard label={t('skillDetail.metricAverageScore')} value={classSummary.averageScore.toFixed(1)} hint={t('skillDetail.metricAverageScoreHint')} />
+        <MetricCard label={t('skillDetail.metricSelections')} value={classSummary.totalSelections} hint={t('skillDetail.metricSelectionsHint', { score: skillClass.score.toFixed(1) })} />
       </section>
 
       <section className="panel-surface overflow-hidden relative min-h-[620px]">
         <div className="px-5 py-4 border-b border-[color:var(--color-border)] bg-surface flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-muted">Evolution Graph</div>
-            <h2 className="text-2xl font-bold font-serif mt-1">Version lineage</h2>
+            <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('skillDetail.graph')}</div>
+            <h2 className="text-2xl font-bold font-serif mt-1">{t('skillDetail.versionLineage')}</h2>
           </div>
           <SkillVersionFilterBar
             originFilter={originFilter}
@@ -309,7 +311,7 @@ export default function SkillDetailPage() {
           onBackgroundClick={closeDrawer}
         />
         {drawerLoading ? (
-          <div className="absolute bottom-4 left-4 text-xs text-muted">Loading version drawer…</div>
+          <div className="absolute bottom-4 left-4 text-xs text-muted">{t('skillDetail.loadingDrawer')}</div>
         ) : null}
         {drawerError ? (
           <div className="absolute bottom-4 left-4 text-xs text-danger">{drawerError}</div>
@@ -317,7 +319,7 @@ export default function SkillDetailPage() {
       </section>
 
       {lineageGraph && lineageGraph.nodes.length === 0 ? (
-        <EmptyState title="No lineage graph" description="This skill does not yet have lineage data to visualize." />
+        <EmptyState title={t('skillDetail.noLineageTitle')} description={t('skillDetail.noLineageDescription')} />
       ) : null}
 
       <SkillVersionDrawer skill={drawerVersion} isOpen={Boolean(selectedVersion)} onClose={closeDrawer} />

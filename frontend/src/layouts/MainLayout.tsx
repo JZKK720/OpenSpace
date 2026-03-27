@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useI18n } from '../i18n';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive
@@ -6,24 +7,51 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     : 'hover:text-primary';
 
 export default function MainLayout() {
+  const { language, setLanguage, t } = useI18n();
+  const vitePort = import.meta.env.VITE_PORT || '3888';
+  const runtimeLabel = import.meta.env.DEV
+    ? t('layout.runtimeDev', { apiPort: '7788', vitePort })
+    : t('layout.runtimeProd', { port: '7788' });
+
   return (
     <div className="h-screen min-w-[1180px] relative flex flex-col overflow-x-auto overflow-y-hidden bg-bg-page text-ink">
       <nav className="relative z-10 flex justify-between items-center px-4 py-3 border-b border-[color:var(--color-border)] bg-bg-page">
         <div className="flex items-center gap-8">
-          <div className="font-bold text-3xl tracking-tighter font-serif">OpenSpace</div>
+          <img src="/logo.png" alt="Cubecloud" className="h-10 w-auto" />
           <div className="flex gap-4 text-sm">
             <NavLink to="/dashboard" className={linkClass}>
-              Dashboard
+              {t('layout.dashboard')}
             </NavLink>
             <NavLink to="/skills" className={linkClass}>
-              Skills
+              {t('layout.skills')}
             </NavLink>
             <NavLink to="/workflows" className={linkClass}>
-              Workflows
+              {t('layout.workflows')}
             </NavLink>
           </div>
         </div>
-        <div className="text-xs text-muted">API: `localhost:7788` · Vite: `localhost:3888`</div>
+        <div className="flex items-center gap-3 text-xs text-muted">
+          <div>{runtimeLabel}</div>
+          <div className="flex items-center gap-2">
+            <span>{t('layout.language')}</span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`rounded-full border px-2 py-1 transition-colors ${language === 'en' ? 'border-[color:var(--color-ink)] bg-surface text-ink' : 'border-[color:var(--color-border)] hover:border-[color:var(--color-border-dark)]'}`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('zh-CN')}
+                className={`rounded-full border px-2 py-1 transition-colors ${language === 'zh-CN' ? 'border-[color:var(--color-ink)] bg-surface text-ink' : 'border-[color:var(--color-border)] hover:border-[color:var(--color-border-dark)]'}`}
+              >
+                中文
+              </button>
+            </div>
+          </div>
+        </div>
       </nav>
 
       <main className="app-scroll-region relative z-10 min-h-0 flex-1 overflow-auto">
