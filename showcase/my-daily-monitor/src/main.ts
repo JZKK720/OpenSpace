@@ -30,6 +30,14 @@ import {
 } from './components';
 import { Panel } from './components/Panel';
 import { RefreshScheduler } from './services/refresh-scheduler';
+import {
+  fetchCalendarEvents,
+  fetchEmails,
+  fetchFeishuMessages,
+  fetchNews,
+  fetchStockQuotes,
+  fetchWorkflowRuns,
+} from './services';
 import { formatDate } from './utils';
 import { generateDailyBriefing } from './services/ai-summary';
 
@@ -231,7 +239,6 @@ scheduler.registerAll([
   { name: 'news', fn: async () => {
     await newsPanel.refresh();
     try {
-      const { fetchNews } = await import('./services/news');
       const articles = await fetchNews();
       scanForBreakingNews(articles as any);
     } catch {}
@@ -293,22 +300,6 @@ function scrollToPanel(id: string): void {
 // ============================================================
 async function refreshFocusSidebar(): Promise<void> {
   try {
-    const [
-      { fetchCalendarEvents },
-      { fetchEmails },
-      { fetchFeishuMessages },
-      { fetchStockQuotes },
-      { fetchWorkflowRuns },
-      { fetchNews },
-    ] = await Promise.all([
-      import('./services/schedule'),
-      import('./services/email'),
-      import('./services/feishu'),
-      import('./services/stock-market'),
-      import('./services/code-status'),
-      import('./services/news'),
-    ]);
-
     const [events, emails, feishuMsgs, stocks, runs, news] = await Promise.all([
       fetchCalendarEvents(), fetchEmails(), fetchFeishuMessages(),
       fetchStockQuotes(), fetchWorkflowRuns(), fetchNews(),
@@ -382,7 +373,6 @@ async function refreshMapMarkers(): Promise<void> {
       }, () => {}, { timeout: 3000 });
     }
     try {
-      const { fetchCalendarEvents } = await import('./services/schedule');
       const events = await fetchCalendarEvents();
       for (const ev of events) {
         if (!ev.location || ev.location.includes('http') || ev.location.includes('Meeting')) continue;
@@ -394,7 +384,6 @@ async function refreshMapMarkers(): Promise<void> {
       }
     } catch {}
     try {
-      const { fetchNews } = await import('./services/news');
       const articles = await fetchNews();
       const usedSources = new Set<string>();
       for (const a of articles.slice(0, 20)) {

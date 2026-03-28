@@ -36,6 +36,7 @@ openspace/config/config_communication.json
 
 # Logs
 logs/
+*-build.log
 
 # GDPVal reference file cache (pre-downloaded from HuggingFace)
 gdpval_bench/ref_cache/

@@ -1,0 +1,404 @@
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+import json
+from typing import Any, Dict, List
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
+from openspace.chat_thread_gateway import (
+    ChatThreadGatewayError,
+    get_chat_thread_history,
+    submit_chat_thread_handoff,
+)
+
+
+class ExternalAgentGatewayError(RuntimeError):
+    def __init__(self, message: str, *, status_code: int = 502, details: Any | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.details = details
+
+
+class ExternalAgentAdapter(ABC):
+    protocol_ids: tuple[str, ...] = ()
+
+    def matches(self, protocol: str) -> bool:
+        return protocol.strip().lower() in self.protocol_ids
+
+    @abstractmethod
+    def handoff(
+        self,
+        agent: Dict[str, Any],
+        *,
+        prompt: str,
+        thread_id: str | None = None,
+        timezone: str = "UTC",
+        history_limit: int = 10,
+    ) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def history(
+        self,
+        agent: Dict[str, Any],
+        *,
+        thread_id: str,
+        limit: int = 10,
+    ) -> Dict[str, Any]:
+        raise NotImplementedError
+
+
+class ChatThreadAdapter(ExternalAgentAdapter):
+    protocol_ids = ("chat-thread", "threaded-chat")
+
+    def handoff(
+        self,
+        agent: Dict[str, Any],
+        *,
+        prompt: str,
+        thread_id: str | None = None,
+        timezone: str = "UTC",
+        history_limit: int = 10,
+    ) -> Dict[str, Any]:
+        try:
+            return submit_chat_thread_handoff(
+                agent,
+                prompt=prompt,
+                thread_id=thread_id,
+                timezone=timezone,
+                history_limit=history_limit,
+            )
+        except ChatThreadGatewayError as exc:
+            raise ExternalAgentGatewayError(
+                str(exc),
+                status_code=exc.status_code,
+                details=exc.details,
+            ) from exc
+
+    def history(
+        self,
+        agent: Dict[str, Any],
+        *,
+        thread_id: str,
+        limit: int = 10,
+    ) -> Dict[str, Any]:
+        try:
+            return get_chat_thread_history(agent, thread_id=thread_id, limit=limit)
+        except ChatThreadGatewayError as exc:
+            raise ExternalAgentGatewayError(
+                str(exc),
+                status_code=exc.status_code,
+                details=exc.details,
+            ) from exc
+
+
+class HttpJsonAdapter(ExternalAgentAdapter):
+    protocol_ids = ("http-json", "json-http", "request-response-json")
+
+    def handoff(
+        self,
+        agent: Dict[str, Any],
+        *,
+        prompt: str,
+        thread_id: str | None = None,
+        timezone: str = "UTC",
+        history_limit: int = 10,
+    ) -> Dict[str, Any]:
+        action_url = str(agent.get("actionUrl") or "").strip()
+        if not action_url:
+            raise ExternalAgentGatewayError("External agent action URL is not configured", status_code=400)
+
+        field_map = _field_map(agent.get("_requestFieldMap"))
+        payload: Dict[str, Any] = {}
+        payload[field_map.get("prompt", "prompt")] = prompt
+        if thread_id:
+            payload[field_map.get("threadId", "thread_id")] = thread_id
+        if timezone:
+            payload[field_map.get("timezone", "timezone")] = timezone
+
+        response = _request_json(
+            action_url,
+            method="POST",
+            payload=payload,
+            auth_token=str(agent.get("_actionAuthToken") or "").strip() or None,
+            headers=_headers(agent.get("_actionHeaders")),
+        )
+
+        response_map = _field_map(agent.get("_responseFieldMap"))
+        resolved_thread_id = str(
+            _dig(response, response_map.get("threadId", "thread_id"))
+            or thread_id
+            or ""
+        ).strip()
+        status = str(
+            _dig(response, response_map.get("status", "status"))
+            or "completed"
+        ).strip() or "completed"
+        latest_response = _stringify_content(
+            _dig(response, response_map.get("response", "response"))
+        )
+        latest_turn = {
+            "turn_number": 1,
+            "user_input": prompt,
+            "response": latest_response,
+            "state": status,
+            "started_at": None,
+            "completed_at": None,
+            "tool_calls": [],
+        }
+
+        return {
+            "agentId": str(agent.get("id") or "external-agent"),
+            "threadId": resolved_thread_id,
+            "threadCreated": bool(resolved_thread_id and resolved_thread_id != str(thread_id or "").strip()),
+            "messageId": str(_dig(response, response_map.get("messageId", "message_id")) or ""),
+            "status": status,
+            "actionUrl": action_url,
+            "hasMore": False,
+            "turns": [latest_turn],
+            "latestTurn": latest_turn,
+        }
+
+    def history(
+        self,
+        agent: Dict[str, Any],
+        *,
+        thread_id: str,
+        limit: int = 10,
+    ) -> Dict[str, Any]:
+        history_url = str(agent.get("historyUrl") or "").strip()
+        if not history_url:
+            raise ExternalAgentGatewayError(
+                f"External agent '{agent.get('id')}' does not define a history URL",
+                status_code=400,
+            )
+
+        request_map = _field_map(agent.get("_historyRequestFieldMap"))
+        query = urlencode({
+            request_map.get("threadId", "thread_id"): thread_id,
+            request_map.get("limit", "limit"): max(1, min(int(limit), 100)),
+        })
+        separator = "&" if "?" in history_url else "?"
+        response = _request_json(
+            f"{history_url}{separator}{query}",
+            method="GET",
+            auth_token=str(agent.get("_historyAuthToken") or "").strip() or None,
+            headers=_headers(agent.get("_historyHeaders")),
+        )
+
+        response_map = _field_map(agent.get("_historyResponseFieldMap") or agent.get("_responseFieldMap"))
+        turns = _dig(response, response_map.get("turns", "turns"))
+        if not isinstance(turns, list):
+            turns = []
+        latest_turn = _dig(response, response_map.get("latestTurn", "latestTurn"))
+        if not isinstance(latest_turn, dict):
+            latest_turn = _select_latest_turn(turns)
+
+        return {
+            "agentId": str(agent.get("id") or "external-agent"),
+            "threadId": str(_dig(response, response_map.get("threadId", "thread_id")) or thread_id),
+            "hasMore": bool(_dig(response, response_map.get("hasMore", "has_more"))),
+            "turns": turns,
+            "latestTurn": latest_turn,
+        }
+
+_ADAPTERS: List[ExternalAgentAdapter] = [
+    ChatThreadAdapter(),
+    HttpJsonAdapter(),
+]
+
+
+def list_external_agent_adapter_protocols() -> List[str]:
+    protocols: List[str] = []
+    for adapter in _ADAPTERS:
+        protocols.extend(adapter.protocol_ids)
+    return sorted(set(protocols))
+
+
+def handoff_external_agent(
+    agent: Dict[str, Any],
+    *,
+    prompt: str,
+    thread_id: str | None = None,
+    timezone: str = "UTC",
+    history_limit: int = 10,
+) -> Dict[str, Any]:
+    adapter = _resolve_adapter(agent, require_capability="handoff")
+    return adapter.handoff(
+        agent,
+        prompt=prompt,
+        thread_id=thread_id,
+        timezone=timezone,
+        history_limit=history_limit,
+    )
+
+
+def get_external_agent_history(
+    agent: Dict[str, Any],
+    *,
+    thread_id: str,
+    limit: int = 10,
+) -> Dict[str, Any]:
+    adapter = _resolve_adapter(agent, require_capability="history")
+    return adapter.history(agent, thread_id=thread_id, limit=limit)
+
+
+def _resolve_adapter(
+    agent: Dict[str, Any],
+    *,
+    require_capability: str,
+) -> ExternalAgentAdapter:
+    agent_id = str(agent.get("id") or "external-agent")
+    protocol = str(agent.get("protocol") or "").strip().lower()
+    capabilities = {
+        str(capability).strip().lower()
+        for capability in agent.get("capabilities") or []
+        if str(capability).strip()
+    }
+
+    if require_capability and require_capability not in capabilities:
+        raise ExternalAgentGatewayError(
+            f"External agent '{agent_id}' does not support '{require_capability}'",
+            status_code=400,
+            details={
+                "agentId": agent_id,
+                "protocol": protocol,
+                "capabilities": sorted(capabilities),
+            },
+        )
+
+    for adapter in _ADAPTERS:
+        if adapter.matches(protocol):
+            return adapter
+
+    status_code = 501 if protocol in {"mcp", "model-context-protocol"} else 400
+    raise ExternalAgentGatewayError(
+        f"No external-agent adapter is registered for protocol '{protocol or 'unknown'}'",
+        status_code=status_code,
+        details={
+            "agentId": agent_id,
+            "protocol": protocol,
+            "supportedProtocols": list_external_agent_adapter_protocols(),
+        },
+    )
+
+
+def _request_json(
+    url: str,
+    *,
+    method: str,
+    payload: Dict[str, Any] | None = None,
+    headers: Dict[str, str] | None = None,
+    auth_token: str | None = None,
+    timeout: float = 20.0,
+) -> Dict[str, Any]:
+    body = json.dumps(payload).encode("utf-8") if payload is not None else None
+    request_headers: Dict[str, str] = {
+        "User-Agent": "OpenSpaceExternalGateway/1.0",
+        "Accept": "application/json",
+    }
+    if headers:
+        request_headers.update(headers)
+    if auth_token:
+        request_headers.setdefault("Authorization", f"Bearer {auth_token}")
+    if body is not None:
+        request_headers.setdefault("Content-Type", "application/json")
+
+    request = Request(url, data=body, method=method.upper(), headers=request_headers)
+
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            raw_body = response.read().decode("utf-8")
+    except HTTPError as exc:
+        raw_body = exc.read().decode("utf-8", errors="replace")
+        details = _decode_json(raw_body)
+        status_code = int(getattr(exc, "code", 0) or 0) or 502
+        message = _extract_error_message(details) or f"External agent request failed with HTTP {status_code}"
+        raise ExternalAgentGatewayError(message, status_code=status_code, details=details) from exc
+    except (URLError, TimeoutError, OSError, ValueError) as exc:
+        raise ExternalAgentGatewayError(f"External agent request failed: {exc}", status_code=502) from exc
+
+    details = _decode_json(raw_body)
+    if not isinstance(details, dict):
+        raise ExternalAgentGatewayError("External agent returned an invalid JSON payload", details=raw_body)
+    return details
+
+
+def _field_map(raw: Any) -> Dict[str, str]:
+    if not isinstance(raw, dict):
+        return {}
+    return {
+        str(key): str(value)
+        for key, value in raw.items()
+        if str(key).strip() and value is not None and str(value).strip()
+    }
+
+
+def _headers(raw: Any) -> Dict[str, str] | None:
+    if not isinstance(raw, dict):
+        return None
+    return {
+        str(key): str(value)
+        for key, value in raw.items()
+        if str(key).strip() and value is not None
+    }
+
+
+def _dig(data: Any, path: str) -> Any:
+    if not path:
+        return None
+    current = data
+    for segment in path.split("."):
+        if isinstance(current, dict):
+            current = current.get(segment)
+        elif isinstance(current, list) and segment.isdigit():
+            index = int(segment)
+            if index < 0 or index >= len(current):
+                return None
+            current = current[index]
+        else:
+            return None
+    return current
+
+
+def _stringify_content(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if value is None:
+        return ""
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _decode_json(raw_body: str) -> Any:
+    try:
+        return json.loads(raw_body)
+    except json.JSONDecodeError:
+        return raw_body
+
+
+def _extract_error_message(details: Any) -> str | None:
+    if isinstance(details, dict):
+        for key in ("error", "message", "detail"):
+            value = details.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    if isinstance(details, str) and details.strip():
+        return details.strip()
+    return None
+
+
+def _select_latest_turn(turns: List[Dict[str, Any]]) -> Dict[str, Any] | None:
+    best_turn: Dict[str, Any] | None = None
+    best_turn_number = -1
+    for turn in turns:
+        if not isinstance(turn, dict):
+            continue
+        turn_number = turn.get("turn_number")
+        if isinstance(turn_number, int) and turn_number >= best_turn_number:
+            best_turn = turn
+            best_turn_number = turn_number
+        elif best_turn is None:
+            best_turn = turn
+    return best_turn

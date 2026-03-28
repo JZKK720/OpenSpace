@@ -7,12 +7,15 @@ from typing import Any, Dict, Iterable, List, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-from flask import Flask, abort, jsonify, send_from_directory, url_for
+from flask import Flask, abort, jsonify, request, send_from_directory, url_for
 
+from openspace.external_agent_gateway import ExternalAgentGatewayError, get_external_agent_history, handoff_external_agent
+from openspace.external_agents import get_external_agent, get_external_agents_status
 from openspace.recording.action_recorder import analyze_agent_actions, load_agent_actions
 from openspace.recording.utils import load_recording_session
 from openspace.skill_engine import SkillStore
 from openspace.skill_engine.types import SkillRecord
+from openspace.standalone_apps import get_standalone_app_status, get_standalone_apps_status
 
 API_PREFIX = "/api/v1"
 FRONTEND_DIST_DIR = PROJECT_ROOT / "frontend" / "dist"
@@ -114,6 +117,67 @@ def create_app() -> Flask:
                 },
             }
         )
+
+    @app.route(f"{API_PREFIX}/standalone-apps", methods=["GET"])
+    def standalone_apps_status() -> Any:
+        items = get_standalone_apps_status()
+        return jsonify({"items": items, "count": len(items)})
+
+    @app.route(f"{API_PREFIX}/standalone-apps/<app_id>", methods=["GET"])
+    def standalone_app_status(app_id: str) -> Any:
+        item = get_standalone_app_status(app_id)
+        if not item:
+            return jsonify({"error": f"Unknown standalone app: {app_id}"}), 404
+        return jsonify(item)
+
+    @app.route(f"{API_PREFIX}/external-agents", methods=["GET"])
+    def external_agents_status() -> Any:
+        items = get_external_agents_status()
+        return jsonify({"items": items, "count": len(items)})
+
+    @app.route(f"{API_PREFIX}/external-agents/<agent_id>/handoff", methods=["POST"])
+    def external_agent_handoff(agent_id: str) -> Any:
+        payload = request.get_json(silent=True) or {}
+        prompt = str(payload.get("prompt") or "").strip()
+        thread_id = str(payload.get("threadId") or "").strip() or None
+        timezone = str(payload.get("timezone") or "UTC").strip() or "UTC"
+
+        if not prompt:
+            return jsonify({"error": "prompt is required"}), 400
+
+        agent = get_external_agent(agent_id)
+        if not agent:
+            return jsonify({"error": f"Unknown external agent: {agent_id}"}), 404
+
+        try:
+            result = handoff_external_agent(
+                agent,
+                prompt=prompt,
+                thread_id=thread_id,
+                timezone=timezone,
+            )
+        except ExternalAgentGatewayError as exc:
+            return _external_agent_error(exc)
+
+        return jsonify(result)
+
+    @app.route(f"{API_PREFIX}/external-agents/<agent_id>/history", methods=["GET"])
+    def external_agent_history(agent_id: str) -> Any:
+        thread_id = (_str_arg("thread_id", "") or "").strip()
+        limit = _int_arg("limit", 10)
+        if not thread_id:
+            return jsonify({"error": "thread_id is required"}), 400
+
+        agent = get_external_agent(agent_id)
+        if not agent:
+            return jsonify({"error": f"Unknown external agent: {agent_id}"}), 404
+
+        try:
+            result = get_external_agent_history(agent, thread_id=thread_id, limit=limit)
+        except ExternalAgentGatewayError as exc:
+            return _external_agent_error(exc)
+
+        return jsonify(result)
 
     @app.route(f"{API_PREFIX}/skills", methods=["GET"])
     def list_skills() -> Any:
@@ -290,6 +354,14 @@ def _str_arg(name: str, default: str) -> str:
 
 def _skill_score(record: SkillRecord) -> float:
     return round(record.effective_rate * 100, 1)
+
+
+def _external_agent_error(exc: ExternalAgentGatewayError) -> Any:
+    payload: Dict[str, Any] = {"error": str(exc)}
+    if exc.details is not None:
+        payload["details"] = exc.details
+    status_code = exc.status_code if 400 <= exc.status_code < 600 else 502
+    return jsonify(payload), status_code
 
 
 def _serialize_skill(record: SkillRecord, *, include_recent_analyses: bool = False) -> Dict[str, Any]:

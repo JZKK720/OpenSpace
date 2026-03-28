@@ -75,7 +75,28 @@ npm run dev
 
 This starts the Vite dev server with the embedded API plugin at [http://localhost:5173](http://localhost:5173). No separate backend server is needed — API routes are handled by the Vite plugin.
 
-### 3. Configure
+### 3. Production Build
+
+```bash
+npm run build
+npm start
+```
+
+This builds both the browser app and the Node production server, then serves the compiled dashboard at [http://localhost:5173](http://localhost:5173).
+
+### 4. Docker Compose from the Repo Root
+
+From `OpenSpace/` you can bring up both web apps together:
+
+```bash
+docker compose up --build -d
+```
+
+That gives you:
+- `http://127.0.0.1:5173` for Agents Monitor
+- `http://127.0.0.1:7788` for OpenSpace, with Spotlight linking back to Agents Monitor
+
+### 5. Configure
 
 Open the dashboard and click **⚙ Settings** in the top-right corner. Add your API keys for the data sources you want to enable:
 

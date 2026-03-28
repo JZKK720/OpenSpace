@@ -8,6 +8,16 @@
  *  4. Better task/content generation with structured output
  */
 import { Panel } from './Panel';
+import {
+  fetchCalendarResult,
+  fetchCodeStatusResult,
+  fetchEmailResult,
+  fetchNews,
+  fetchStockQuotes,
+  searchNews,
+} from '@/services';
+import { fetchCommunityPosts, type CommunityPost } from '@/services/social';
+import { fetchSystemHealth } from '@/services/system-health';
 import { escapeHtml } from '@/utils';
 import { getSecret } from '@/services/settings-store';
 
@@ -131,7 +141,6 @@ const TOOLS: ToolDef[] = [
     keywords: ['news', 'headline', 'article', 'world', 'tech', 'finance', 'AI', '新闻', '头条', '资讯', 'briefing', '简报', 'summary', '总结'],
     fetch: async () => {
       try {
-        const { fetchNews } = await import('@/services/news');
         const news = await fetchNews();
         if (news.length === 0) return 'NEWS: No articles available';
         const critical = news.filter(n => n.threatLevel === 'critical' || n.threatLevel === 'high');
@@ -147,7 +156,6 @@ const TOOLS: ToolDef[] = [
     keywords: ['stock', 'market', 'price', 'share', 'nasdaq', 'sp500', '股', '股票', '市场', 'portfolio', 'briefing', '简报'],
     fetch: async () => {
       try {
-        const { fetchStockQuotes } = await import('@/services/stock-market');
         const stocks = await fetchStockQuotes();
         if (stocks.length === 0) return 'STOCKS: No watchlist configured (add in Settings)';
         return 'STOCKS:\n' + stocks.map(s =>
@@ -161,10 +169,9 @@ const TOOLS: ToolDef[] = [
     keywords: ['hn', 'reddit', 'hacker news', 'community', 'trending', 'hot', '社区', '热帖', 'briefing'],
     fetch: async () => {
       try {
-        const { fetchCommunityPosts } = await import('@/services/social');
         const posts = await fetchCommunityPosts('all');
         if (posts.length === 0) return 'COMMUNITY: No posts available';
-        return 'TECH COMMUNITY:\n' + posts.slice(0, 10).map(p =>
+        return 'TECH COMMUNITY:\n' + posts.slice(0, 10).map((p: CommunityPost) =>
           `- [${p.platform.toUpperCase()}] ${p.title} (${p.score}pts, ${p.comments}💬)`
         ).join('\n');
       } catch { return 'COMMUNITY: Failed to fetch'; }
@@ -175,7 +182,6 @@ const TOOLS: ToolDef[] = [
     keywords: ['schedule', 'calendar', 'meeting', 'event', 'today', '日程', '会议', '日历', 'briefing', '简报'],
     fetch: async () => {
       try {
-        const { fetchCalendarResult } = await import('@/services/schedule');
         const result = await fetchCalendarResult();
         if (!result.configured) return 'SCHEDULE: Google Calendar not configured (enable in Settings → API Keys)';
         if (result.events.length === 0) return 'SCHEDULE: No events today';
@@ -190,7 +196,6 @@ const TOOLS: ToolDef[] = [
     keywords: ['email', 'mail', 'inbox', 'unread', '邮件', '收件箱', 'briefing', '简报'],
     fetch: async () => {
       try {
-        const { fetchEmailResult } = await import('@/services/email');
         const result = await fetchEmailResult();
         if (!result.configured) return 'EMAIL: Not configured (add Gmail/Outlook credentials in Settings)';
         const emails = result.emails;
@@ -209,7 +214,6 @@ const TOOLS: ToolDef[] = [
       const parts: string[] = [];
       // System health
       try {
-        const { fetchSystemHealth } = await import('@/services/system-health');
         const health = await fetchSystemHealth();
         parts.push(`SYSTEM: CPU ${health.cpu.toFixed(1)}%, MEM ${health.memoryUsedPercent.toFixed(1)}%, uptime ${Math.floor(health.uptime / 3600)}h`);
       } catch {}
@@ -252,7 +256,6 @@ const TOOLS: ToolDef[] = [
     keywords: ['github', 'repo', 'ci', 'build', 'deploy', 'workflow', 'code', '代码', '部署'],
     fetch: async () => {
       try {
-        const { fetchCodeStatusResult } = await import('@/services/code-status');
         const result = await fetchCodeStatusResult();
         if (!result.configured) return 'GITHUB: Not configured (add GitHub PAT in Settings)';
         const runs = result.runs;
@@ -444,7 +447,6 @@ export class InsightsPanel extends Panel {
       if (q.includes('search') || q.includes('搜索') || q.includes('latest') || q.includes('最新') || q.includes('find')) {
         try {
           const searchQuery = text.replace(/^.*?(search|搜索|find|查找)\s*/i, '').trim() || text;
-          const { searchNews } = await import('@/services/news');
           const results = await searchNews(searchQuery);
           if (results.length > 0) {
             contextParts.push('WEB SEARCH:\n' + results.slice(0, 5).map(a => `- [${a.source}] ${a.title} (${a.url})`).join('\n'));

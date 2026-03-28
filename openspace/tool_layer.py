@@ -131,6 +131,30 @@ class OpenSpace:
             else:
                 # Load default configs only
                 grounding_config = get_config()
+
+            # Mount external MCP runtimes into the normal MCP provider config.
+            # This keeps external MCP agents inside the same tool-discovery path
+            # as statically configured MCP servers.
+            try:
+                from openspace.external_agents import build_external_mcp_server_configs
+
+                external_mcp_servers = build_external_mcp_server_configs()
+                if external_mcp_servers:
+                    current_servers = dict(getattr(grounding_config.mcp, "servers", {}) or {})
+                    mounted = []
+                    for server_name, server_config in external_mcp_servers.items():
+                        if server_name in current_servers:
+                            logger.info(f"External MCP server '{server_name}' already configured; keeping existing definition")
+                            continue
+                        current_servers[server_name] = server_config
+                        mounted.append(server_name)
+
+                    if mounted:
+                        mcp_cfg = grounding_config.mcp.model_copy(update={"servers": current_servers})
+                        grounding_config = grounding_config.model_copy(update={"mcp": mcp_cfg})
+                        logger.info(f"Mounted {len(mounted)} external MCP runtime(s): {mounted}")
+            except Exception as e:
+                logger.warning(f"Failed to mount external MCP runtimes: {e}")
             
             # Optional: enable ClawWork productivity tools for fair benchmark comparison
             if getattr(self.config, "use_clawwork_productivity", False):

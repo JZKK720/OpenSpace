@@ -7,10 +7,14 @@
     "dev": "vite",
     "dev:api": "tsx watch server/index.ts",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:api\"",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "npm run build:app && npm run build:server",
+    "build:app": "tsc && vite build",
+    "build:server": "tsc --project tsconfig.server.json && node -e \"require('node:fs').mkdirSync('server-dist', { recursive: true }); require('node:fs').writeFileSync('server-dist/package.json', '{\\\"type\\\":\\\"commonjs\\\"}\\n');\"",
+    "preview": "vite preview",
+    "start": "node server-dist/server/index.js"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "concurrently": "^9.2.1",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",

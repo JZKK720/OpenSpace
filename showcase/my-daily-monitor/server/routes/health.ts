@@ -4,6 +4,7 @@
  */
 import os from 'node:os';
 import type { IncomingHttpHeaders } from 'node:http';
+import { probeHttpUrl } from '../lib/probe';
 
 interface ProbeResult {
   url: string;
@@ -29,33 +30,12 @@ const DEFAULT_PROBES = [
  * Ping a URL with timeout and measure latency
  */
 async function probeUrl(url: string, timeoutMs = 3000): Promise<ProbeResult> {
-  const startTime = Date.now();
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-    const response = await fetch(url, {
-      method: 'HEAD',
-      signal: controller.signal,
-      headers: { 'User-Agent': 'SystemHealthMonitor/1.0' },
-    });
-
-    clearTimeout(timeout);
-    const latencyMs = Date.now() - startTime;
-
-    return {
-      url,
-      ok: response.ok,
-      latencyMs,
-    };
-  } catch (error) {
-    const latencyMs = Date.now() - startTime;
-    return {
-      url,
-      ok: false,
-      latencyMs,
-    };
-  }
+  const result = await probeHttpUrl(url, timeoutMs);
+  return {
+    url,
+    ok: result.ok,
+    latencyMs: result.latencyMs,
+  };
 }
 
 /**

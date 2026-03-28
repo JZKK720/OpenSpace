@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import { statSync, readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { probeHttpUrl } from '../lib/probe';
 
 const execAsync = promisify(exec);
 const EXEC_TIMEOUT = 5000;
@@ -67,15 +68,7 @@ export async function handleSystemRequest(
       const urls = (query.urls || '').split(',').map(s => s.trim()).filter(Boolean);
       if (urls.length === 0) return { probes: [] };
       const probes = await Promise.allSettled(
-        urls.map(async (url) => {
-          const start = Date.now();
-          try {
-            const resp = await fetch(url, { signal: AbortSignal.timeout(5000), method: 'HEAD' });
-            return { url, status: resp.status, ok: resp.ok, latencyMs: Date.now() - start };
-          } catch (err: any) {
-            return { url, status: 0, ok: false, latencyMs: Date.now() - start, error: err.message };
-          }
-        })
+        urls.map((url) => probeHttpUrl(url, 5000))
       );
       return { probes: probes.map(r => r.status === 'fulfilled' ? r.value : { url: '', ok: false }) };
     }
