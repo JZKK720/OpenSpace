@@ -151,6 +151,29 @@ a:hover { text-decoration: underline; }
   height: 100vh;
 }
 
+.app-legal {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 16px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.app-legal-primary {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0;
+}
+
+.app-legal-secondary {
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
 .app-header {
   display: flex;
   align-items: center;
