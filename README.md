@@ -153,6 +153,9 @@ openspace-mcp --help   # verify installation
 > pip install -e .
 > ```
 
+> [!NOTE]
+> For Windows rollout of the Cubecloud fork redistribution tag, see [INSTALL_FORK_WINDOWS.md](INSTALL_FORK_WINDOWS.md).
+
 **Choose your path:**
 - **[Path A](#-path-a-for-your-agent)** — Plug OpenSpace into your agent
 - **[Path B](#-path-b-as-your-co-worker)** — Use OpenSpace directly as your AI co-worker
