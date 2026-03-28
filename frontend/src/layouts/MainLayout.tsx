@@ -60,6 +60,11 @@ export default function MainLayout() {
       <main className="app-scroll-region relative z-10 min-h-0 flex-1 overflow-auto">
         <Outlet />
       </main>
+
+      <footer className="relative z-10 border-t border-[color:var(--color-border)] bg-bg-page px-4 py-2 text-[11px] leading-5 text-muted">
+        <div className="font-semibold text-ink">{t('layout.legalPrimary')}</div>
+        <div>{t('layout.legalSecondary')}</div>
+      </footer>
     </div>
   );
 }
