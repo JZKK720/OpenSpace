@@ -3,31 +3,7 @@
  * No need for a separate process — `npm run dev` handles everything.
  */
 import type { Plugin, ViteDevServer } from 'vite';
-import { handleStockRequest } from './server/routes/stock';
-import { handleNewsRequest } from './server/routes/news';
-import { handleGithubRequest } from './server/routes/github';
-import { handleEmailRequest } from './server/routes/email';
-import { handleCalendarRequest } from './server/routes/calendar';
-import { handleFeishuRequest } from './server/routes/feishu';
-import { handleSocialRequest } from './server/routes/social';
-import { handleSystemRequest } from './server/routes/system';
-import { handleOfficeRequest } from './server/routes/office';
-import { handleHealthRequest } from './server/routes/health';
-
-type RouteHandler = (query: Record<string, string>, body: string, headers: Record<string, string | string[] | undefined>) => Promise<unknown>;
-
-const routes: Record<string, RouteHandler> = {
-  '/api/stocks': handleStockRequest,
-  '/api/news': handleNewsRequest,
-  '/api/github': handleGithubRequest,
-  '/api/emails': handleEmailRequest,
-  '/api/calendar': handleCalendarRequest,
-  '/api/feishu': handleFeishuRequest,
-  '/api/social': handleSocialRequest,
-  '/api/system': handleSystemRequest,
-  '/api/office': handleOfficeRequest,
-  '/api/health': handleHealthRequest,
-};
+import { routeHandlers } from './server/routes';
 
 export function apiPlugin(): Plugin {
   return {
@@ -35,7 +11,7 @@ export function apiPlugin(): Plugin {
     configureServer(server: ViteDevServer) {
       server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-        const handler = routes[url.pathname];
+        const handler = routeHandlers[url.pathname];
         if (!handler) return next();
 
         // Parse query

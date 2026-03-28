@@ -600,6 +600,34 @@ class GroundingAgent(BaseAgent):
             tools.append(retrieve_tool)
             logger.info("Added retrieve_skill tool for mid-iteration skill retrieval")
 
+        # Append external-agent delegation tools when configured.
+        try:
+            from openspace.external_agents import load_external_agents
+            if load_external_agents():
+                from openspace.external_agent_tools import (
+                    DelegateExternalAgentTool,
+                    GetExternalAgentHistoryTool,
+                    ListExternalAgentsTool,
+                )
+
+                external_tools = [
+                    ListExternalAgentsTool(),
+                    DelegateExternalAgentTool(),
+                    GetExternalAgentHistoryTool(),
+                ]
+                for tool in external_tools:
+                    tool.bind_runtime_info(
+                        backend=BackendType.SYSTEM,
+                        session_name="internal",
+                    )
+                tools.extend(external_tools)
+                logger.info(
+                    "Added external-agent tools: list_external_agents, "
+                    "delegate_external_agent, get_external_agent_history"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to attach external-agent tools: {e}")
+
         return tools
 
     async def _load_all_tools(self, grounding_client: "GroundingClient") -> List:

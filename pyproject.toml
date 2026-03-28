@@ -27,6 +27,8 @@ dependencies = [
     "pyautogui>=0.9.54",
     "pydantic>=2.12.0",
     "requests>=2.32.0",
+    "aiohttp>=3.11.0",
+    "httpx>=0.28.0",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "mcp_servers": [
+    {
+      "id": "openspace-remote",
+      "name": "OpenSpace Remote Runtime",
+      "description": "Shared MCP runtime exposed by the companion OpenSpace remote agent container.",
+      "server_name": "external-openspace-remote",
+      "url_env": "OPENSPACE_REMOTE_MCP_URL",
+      "health_url_env": "OPENSPACE_REMOTE_HEALTH_URL",
+      "tags": ["mcp", "runtime", "openspace"]
+    }
+  ],
+  "agents": [
+    {
+      "id": "ironclaw",
+      "name": "IronClaw",
+      "description": "Bearer-authenticated IronClaw runtime delegated through the gateway chat API.",
+      "kind": "acting-agent",
+      "protocol": "chat-thread",
+      "capabilities": ["handoff", "history"],
+      "handoff_mode": "chat_thread",
+      "history_mode": "thread_history",
+      "public_url_env": "IRONCLAW_PUBLIC_URL",
+      "internal_url_env": "IRONCLAW_INTERNAL_URL",
+      "health_url_env": "IRONCLAW_HEALTH_URL",
+      "action_url_env": "IRONCLAW_ACTION_URL",
+      "action_auth_token_env": "IRONCLAW_AUTH_TOKEN",
+      "history_auth_token_env": "IRONCLAW_AUTH_TOKEN",
+      "mcp_url_env": "IRONCLAW_MCP_URL",
+      "mcp_auth_token_env": "IRONCLAW_AUTH_TOKEN",
+      "linked_mcp_servers": ["openspace-remote"],
+      "tags": ["assistant", "delegate", "ironclaw"]
+    }
+  ]
+}

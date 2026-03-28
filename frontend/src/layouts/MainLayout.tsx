@@ -22,6 +22,9 @@ export default function MainLayout() {
             <NavLink to="/dashboard" className={linkClass}>
               {t('layout.dashboard')}
             </NavLink>
+            <NavLink to="/showcase" className={linkClass}>
+              {t('layout.spotlight')}
+            </NavLink>
             <NavLink to="/skills" className={linkClass}>
               {t('layout.skills')}
             </NavLink>

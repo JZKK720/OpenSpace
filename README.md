@@ -15,6 +15,8 @@
 
 **One Command to Evolve All Your AI Agents**: OpenClaw, nanobot, Claude Code, Codex, Cursor and etc.
 
+Code in this repository remains available under the MIT license in [LICENSE](LICENSE). Cubecloud branding, logos, and `cubecloud.io` rights are reserved under [TRADEMARKS.md](TRADEMARKS.md), with explicit brand assets listed in [BRAND_ASSETS.md](BRAND_ASSETS.md).
+
 <img src="assets/cli-typing.gif" width="500px" alt="openspace --query your task">
 
 </div>
@@ -258,15 +260,87 @@ npm run dev
 
 **Docker Compose option**
 
-If you want the dashboard packaged as a local container instead of running Python and Vite directly:
+If you want a packaged local deployment instead of running Python and Vite directly:
 
 ```bash
 docker compose up --build -d
 ```
 
-Then open `http://127.0.0.1:7788`.
+Then open:
+- `http://127.0.0.1:7788` for OpenSpace
+- `http://127.0.0.1:5173` for Agents Monitor
 
-This container flow builds the frontend once and serves it from the Flask dashboard server. It is intended for the **web dashboard** and its persisted data (`.openspace/`, `logs/`) rather than the full host-automation runtime.
+This Compose stack now brings up both web surfaces together:
+- `cubecloud-dashboard`: Flask dashboard server with bundled `frontend/dist`
+- `agents-monitor`: Node production server for `showcase/my-daily-monitor`, serving the built app plus its `/api/*` routes
+
+It is intended for the **web dashboard surfaces** and their persisted data (`.openspace/`, `logs/`) rather than the full host-automation runtime.
+
+**External agent registry and IronClaw**
+
+Both web surfaces now read the shared registry at `openspace/config/external_agents.json`.
+
+The default registry entry is `IronClaw`, wired for a host service on port `3231`:
+- browser-facing URL: `http://127.0.0.1:3231/`
+- container-facing URL: `http://host.docker.internal:3231/`
+
+For Docker Compose, copy the repo-root `.env.example` to `.env` and keep your IronClaw token there so redeploys continue to work without retyping it.
+
+Override the defaults with environment variables when needed:
+
+```bash
+IRONCLAW_PUBLIC_URL=http://127.0.0.1:3231/
+IRONCLAW_INTERNAL_URL=http://host.docker.internal:3231/
+IRONCLAW_HEALTH_URL=http://host.docker.internal:3231/
+IRONCLAW_ACTION_URL=http://host.docker.internal:3231/api/chat/send
+IRONCLAW_AUTH_TOKEN=<the IronClaw gateway bearer token>
+
+# Optional: only set this if IronClaw itself exposes a real MCP endpoint.
+IRONCLAW_MCP_URL=http://host.docker.internal:3231/sse
+```
+
+On the live runtime connected in this session, IronClaw delegates through its bearer-authenticated gateway chat API rather than an exposed MCP route:
+- `POST /api/chat/thread/new`
+- `POST /api/chat/send`
+- `GET /api/chat/history?thread_id=...`
+
+OpenSpace now proxies that flow at `POST /api/v1/external-agents/ironclaw/handoff` and polls thread state through `GET /api/v1/external-agents/ironclaw/history?thread_id=...`.
+
+When you run the dashboard in Docker, set `IRONCLAW_AUTH_TOKEN` to the same value as IronClaw's `GATEWAY_AUTH_TOKEN` so the dashboard container can create threads and submit work.
+
+OpenSpace now separates:
+- external agents that accept delegated work, such as IronClaw
+- shared MCP servers that should be mounted into OpenSpace's tool graph
+
+Use the top-level `mcp_servers` section in `openspace/config/external_agents.json` for actual MCP runtimes, and use `linked_mcp_servers` on an agent when that agent should consume the same shared tool surface in the future.
+
+The default registry already links IronClaw to the shared `openspace-remote` MCP runtime, while keeping IronClaw itself as a handoff agent unless `IRONCLAW_MCP_URL` is explicitly set.
+
+For example, this pattern lets you add more MCP servers on other container ports and associate them with one or more external agents without changing application code:
+
+```json
+{
+  "mcp_servers": [
+    {
+      "id": "billing-runtime",
+      "server_name": "external-billing-runtime",
+      "url_env": "BILLING_MCP_URL"
+    }
+  ],
+  "agents": [
+    {
+      "id": "ironclaw",
+      "linked_mcp_servers": ["openspace-remote", "billing-runtime"]
+    },
+    {
+      "id": "ops-agent",
+      "linked_mcp_servers": ["billing-runtime"]
+    }
+  ]
+}
+```
+
+If IronClaw later exposes a real MCP endpoint, set `IRONCLAW_MCP_URL` and OpenSpace will mount it as an agent-exposed MCP runtime too. If IronClaw runs as a sibling Compose service instead of on the host, replace `host.docker.internal` with the service name, for example `http://ironclaw:3231/`.
 
 <div align="center">
 <table>
@@ -445,6 +519,17 @@ A collaborative registry where agents share evolved skills. When one agent evolv
 ---
 
 ## 🔧 Advanced Configuration
+
+---
+
+## License and Branding
+
+- Code license: MIT, as set out in [LICENSE](LICENSE)
+- Branding and trademark policy: [TRADEMARKS.md](TRADEMARKS.md)
+- Brand asset notice: [BRAND_ASSETS.md](BRAND_ASSETS.md)
+- Contribution policy: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+You may use, fork, modify, and contribute to the code under MIT, but no right is granted to use the Cubecloud name, `cubecloud.io`, logos, or other Cubecloud brand identifiers without permission.
 
 For most users, [Quick Start](#-quick-start) is all you need. For advanced options (environment variables, execution modes, security policies, etc.), see [`openspace/config/README.md`](openspace/config/README.md).
 

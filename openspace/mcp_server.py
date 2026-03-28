@@ -911,14 +911,28 @@ def run_mcp_server() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="OpenSpace MCP Server")
-    parser.add_argument("--transport", choices=["stdio", "sse"], default="stdio")
-    parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--transport", choices=["stdio", "sse", "streamable-http"], default="stdio")
+    parser.add_argument("--host", default=os.environ.get("OPENSPACE_MCP_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("OPENSPACE_MCP_PORT", "8080")))
+    parser.add_argument("--mount-path", default=os.environ.get("OPENSPACE_MCP_MOUNT_PATH") or None)
     args = parser.parse_args()
 
-    if args.transport == "sse":
-        mcp.run(transport="sse", sse_params={"port": args.port})
-    else:
+    if args.transport == "stdio":
         mcp.run(transport="stdio")
+        return
+
+    # Newer FastMCP versions read network settings from ``mcp.settings`` rather
+    # than accepting transport-specific kwargs on ``run()``.
+    mcp.settings.host = args.host
+    mcp.settings.port = args.port
+
+    if args.transport == "sse":
+        if args.mount_path is not None:
+            mcp.settings.mount_path = args.mount_path
+        mcp.run(transport="sse", mount_path=args.mount_path)
+        return
+
+    mcp.run(transport="streamable-http")
 
 
 if __name__ == "__main__":

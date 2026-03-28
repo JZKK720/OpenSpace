@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { overviewApi, type OverviewResponse } from '../api';
+import ExternalAgentCard from '../components/ExternalAgentCard';
 import MetricCard from '../components/MetricCard';
 import EmptyState from '../components/EmptyState';
+import { useExternalAgentsAvailability } from '../hooks/useExternalAgentsAvailability';
 import { useI18n } from '../i18n';
 import { formatDate, formatInstruction, formatPercent, truncate } from '../utils/format';
 
 export default function DashboardPage() {
   const { t } = useI18n();
+  const externalAgents = useExternalAgentsAvailability();
   const [data, setData] = useState<OverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +71,33 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between"><span className="text-muted">{t('dashboard.workflowCount')}</span><span>{data.health.workflow_count}</span></div>
             <div className="flex items-center justify-between"><span className="text-muted">{t('dashboard.builtFrontend')}</span><span>{data.health.frontend_dist_exists ? t('common.yes') : t('common.no')}</span></div>
           </div>
+        </div>
+      </section>
+
+      <section>
+        <div className="panel-surface p-5 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsKicker')}</div>
+              <h2 className="text-2xl font-bold font-serif mt-1">{t('dashboard.externalAgentsTitle')}</h2>
+            </div>
+            <div className="text-sm text-muted">
+              {externalAgents.checking ? t('dashboard.externalAgentsChecking') : t('dashboard.externalAgentsCount', { count: externalAgents.agents.length })}
+            </div>
+          </div>
+          {externalAgents.agents.length === 0 ? (
+            externalAgents.checking ? (
+              <div className="text-sm text-muted">{t('dashboard.externalAgentsChecking')}</div>
+            ) : (
+              <EmptyState title={t('dashboard.externalAgentsEmptyTitle')} description={t('dashboard.externalAgentsEmptyDescription')} />
+            )
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-2">
+              {externalAgents.agents.map((agent) => (
+                <ExternalAgentCard key={agent.id} agent={agent} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

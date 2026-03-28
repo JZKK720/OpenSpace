@@ -32,8 +32,12 @@
     --radius-chip: 999px;
     --radius-card: 32px;
     --radius-card-sm: 18px;
-    --font-serif: 'Neuton', Georgia, serif;
-    --font-sans: 'Cabin', system-ui, -apple-system, sans-serif;
+    --font-sans-latin: 'Urbanist', 'Avenir Next', 'Segoe UI', sans-serif;
+    --font-sans-cjk: 'PingFang SC', 'MiSans', 'HarmonyOS Sans SC', 'Noto Sans SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    --font-display-latin: 'Space Grotesk', 'Urbanist', 'Avenir Next', sans-serif;
+    --font-display-cjk: 'PingFang SC', 'MiSans', 'HarmonyOS Sans SC', 'Noto Sans SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    --font-serif: var(--font-display-latin), var(--font-display-cjk);
+    --font-sans: var(--font-sans-latin), var(--font-sans-cjk);
     --font-mono: ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Code', 'Courier New', monospace;
     --shadow-hard: 4px 4px 0px 0px rgba(74, 59, 42, 0.1);
     --shadow-hard-sm: 2px 2px 0px 0px rgba(74, 59, 42, 0.1);
@@ -67,8 +71,13 @@
     margin: 0;
     background-color: var(--color-bg-page);
     color: var(--color-ink);
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-size: 14.75px;
+    line-height: 1.58;
+    letter-spacing: -0.01em;
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   html {
@@ -81,8 +90,35 @@
     overscroll-behavior: none;
   }
 
-  h1{
-    font-family: var(--font-sans);
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+  }
+
+  :lang(zh-CN) {
+    --font-sans: var(--font-sans-cjk), var(--font-sans-latin);
+    --font-serif: var(--font-display-cjk), var(--font-display-latin);
+  }
+
+  :lang(zh-CN) body {
+    font-size: 15.25px;
+    line-height: 1.66;
+    letter-spacing: 0;
+  }
+
+  :lang(zh-CN) h1,
+  :lang(zh-CN) h2,
+  :lang(zh-CN) h3,
+  :lang(zh-CN) h4,
+  :lang(zh-CN) h5,
+  :lang(zh-CN) h6 {
+    letter-spacing: 0;
   }
 
   button {

@@ -91,17 +91,21 @@ After building, start the backend and it will serve `frontend/dist` as static fi
 
 ## Docker Compose
 
-If you want the dashboard packaged as a local container, run this from the repo root:
+If you want the packaged local web deployment, run this from the repo root:
 
 ```bash
 docker compose up --build -d
 ```
 
-Open `http://127.0.0.1:7788` after the container becomes healthy.
+Open these URLs after the services become healthy:
+- `http://127.0.0.1:7788` for OpenSpace
+- `http://127.0.0.1:5173` for Agents Monitor
 
 What this does:
 - Builds the React frontend and copies `frontend/dist` into the image.
 - Installs the Python package and starts `openspace.dashboard_server` on `0.0.0.0:7788`.
+- Builds `showcase/my-daily-monitor` and starts its Node production server on `0.0.0.0:5173`.
+- Connects the dashboard to Agents Monitor with separate internal and public URLs so health checks work inside Docker and browser links still open on the host.
 - Persists dashboard state by mounting `./.openspace` and `./logs` into the container.
 
 Useful commands:
@@ -111,13 +115,13 @@ docker compose logs -f
 docker compose down
 ```
 
-To change the exposed local port:
+To change the exposed local ports:
 
 ```bash
-CUBECLOUD_PORT=8080 docker compose up --build -d
+CUBECLOUD_PORT=8080 AGENTS_MONITOR_PORT=5174 docker compose up --build -d
 ```
 
-This Compose stack is for the **dashboard web app**. OpenSpace features that depend on direct host GUI or shell automation should still run on the host machine.
+This Compose stack is for the **web apps**. OpenSpace features that depend on direct host GUI or shell automation should still run on the host machine.
 
 ## Main Pages
 
