@@ -51,6 +51,24 @@ interface TerminalInfo {
   outputLineCount: number;
 }
 
+interface ExternalAgentStatus {
+  id: string;
+  name: string;
+  description: string;
+  kind: string;
+  tags: string[];
+  publicUrl: string;
+  healthUrl: string;
+  actionUrl: string;
+  mcpUrl: string;
+  hasActionUrl: boolean;
+  hasMcpUrl: boolean;
+  available: boolean;
+  statusCode: number;
+  latencyMs: number | null;
+  error: string | null;
+}
+
 type MonitorTab = 'running' | 'terminals' | 'servers' | 'history';
 
 // ---- Persistence ----
@@ -194,6 +212,7 @@ export class DevOpsPanel extends Panel {
   private history: ExitedProcess[] = [];
   private terminalsList: TerminalInfo[] = [];
   private expandedTerminal: number | null = null;
+  private externalAgents: ExternalAgentStatus[] = [];
 
   constructor() {
     super({ id: 'devops', title: 'Process Monitor', showCount: true, className: 'panel-wide' });
@@ -220,7 +239,7 @@ export class DevOpsPanel extends Panel {
 
   private renderTabs(): void {
     if (!this.tabsEl) return;
-    const probeCount = getProbes().length;
+    const probeCount = getProbes().length + this.externalAgents.length;
     const activeTerms = this.terminalsList.filter(t => t.isActive).length;
     const tabs: { id: MonitorTab; label: string }[] = [
       { id: 'running', label: '⚡ Running' },
@@ -439,17 +458,29 @@ export class DevOpsPanel extends Panel {
 
   private async refreshServers(): Promise<void> {
     const probes = getProbes();
-    if (probes.length === 0) {
+    const [externalAgentsData, probeData] = await Promise.all([
+      fetch('/api/external-agents').then((resp) => resp.json()).catch(() => ({ items: [] })),
+      probes.length > 0
+        ? fetch(`/api/system?${new URLSearchParams({ action: 'probe', urls: probes.join(',') }).toString()}`).then((resp) => resp.json()).catch(() => ({ probes: [] }))
+        : Promise.resolve({ probes: [] }),
+    ]);
+
+    this.externalAgents = Array.isArray(externalAgentsData.items) ? externalAgentsData.items : [];
+    this.serverResults = Array.isArray(probeData.probes) ? probeData.probes : [];
+
+    const totalEndpoints = this.externalAgents.length + probes.length;
+    if (totalEndpoints === 0) {
       this.setCount(0);
+      this.clearDataBadge();
+      this.renderTabs();
       this.renderBody();
       return;
     }
-    const resp = await fetch(`/api/system?action=probe&urls=${probes.join(',')}`);
-    const data = await resp.json();
-    this.serverResults = data.probes || [];
-    const upCount = this.serverResults.filter((r: any) => r.ok).length;
+
+    const upCount = this.externalAgents.filter((agent) => agent.available).length + this.serverResults.filter((r: any) => r.ok).length;
     this.setCount(upCount);
-    this.setDataBadge(upCount === probes.length ? 'live' : 'unavailable', `${upCount}/${probes.length} up`);
+    this.setDataBadge(upCount === totalEndpoints ? 'live' : 'unavailable', `${upCount}/${totalEndpoints} up`);
+    this.renderTabs();
     this.renderBody();
   }
 
@@ -463,11 +494,41 @@ export class DevOpsPanel extends Panel {
         <button class="monitor-add-btn" id="probeAdd">+ Add</button>
       </div>`;
 
-    if (probes.length === 0) {
+    if (probes.length === 0 && this.externalAgents.length === 0) {
       this.bodyEl.innerHTML = `${inputHtml}<div class="panel-empty">Add server / API URLs to monitor uptime & latency.<br><small style="color:var(--text-muted)">Supports any HTTP endpoint: cloud servers, APIs, websites<br>Health checks run every 5 seconds</small></div>`;
       this.wireProbe(probes);
       return;
     }
+
+    const declaredRows = this.externalAgents.map((agent) => {
+      const isUp = agent.available;
+      const icon = isUp ? '🟢' : '🔴';
+      const statusText = isUp ? 'UP' : 'DOWN';
+      const statusColor = isUp ? 'var(--green)' : 'var(--red)';
+      const meta = [agent.kind, ...agent.tags];
+      if (agent.hasActionUrl) meta.push('action');
+      if (agent.hasMcpUrl) meta.push('mcp');
+      const detailParts = [];
+      if (agent.statusCode) detailParts.push(`HTTP ${agent.statusCode}`);
+      if (agent.latencyMs !== null) detailParts.push(`${agent.latencyMs}ms`);
+      if (!isUp && agent.error) detailParts.push(agent.error);
+
+      return `
+      <div class="jm-row">
+        <span class="jm-icon">${icon}</span>
+        <div class="jm-info">
+          <div class="jm-label">${escapeHtml(agent.name)}</div>
+          <div class="jm-cmd">${escapeHtml(agent.publicUrl || agent.healthUrl || '')}</div>
+          ${agent.description ? `<div class="jm-cmd" style="margin-top:2px">${escapeHtml(agent.description)}</div>` : ''}
+          ${meta.length > 0 ? `<div class="jm-cmd" style="margin-top:2px;color:var(--text-muted)">${escapeHtml(meta.join(' · '))}</div>` : ''}
+          ${detailParts.length > 0 ? `<div class="jm-cmd" style="margin-top:2px;color:${statusColor}">${escapeHtml(detailParts.join(' · '))}</div>` : ''}
+        </div>
+        <div class="jm-stats">
+          <span class="jm-status" style="color:${statusColor}">● ${statusText}</span>
+          <span class="jm-duration">registry</span>
+        </div>
+      </div>`;
+    }).join('');
 
     const rows = (this.serverResults.length > 0 ? this.serverResults : probes.map((u: string) => ({ url: u, ok: null }))).map((r: any, i: number) => {
       const isUp = r.ok === true;
@@ -496,7 +557,14 @@ export class DevOpsPanel extends Panel {
       </div>`;
     }).join('');
 
-    this.bodyEl.innerHTML = `${inputHtml}<div class="jm-list">${rows}</div>`;
+    const registrySection = this.externalAgents.length > 0
+      ? `<div style="padding:12px 2px 6px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)">Declared agents</div><div class="jm-list">${declaredRows}</div>`
+      : '';
+    const probeSection = probes.length > 0
+      ? `<div style="padding:12px 2px 6px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)">Ad hoc probes</div><div class="jm-list">${rows}</div>`
+      : '';
+
+    this.bodyEl.innerHTML = `${inputHtml}${registrySection}${probeSection}`;
     this.wireProbe(probes);
     this.bodyEl.querySelectorAll<HTMLButtonElement>('[data-pidx]').forEach(b => {
       b.addEventListener('click', () => {

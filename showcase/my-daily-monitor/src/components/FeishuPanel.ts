@@ -1,5 +1,6 @@
 import { Panel } from './Panel';
 import { fetchFeishuResult, type FeishuMessage } from '@/services/feishu';
+import { getSecret } from '@/services/settings-store';
 import { escapeHtml } from '@/utils';
 
 /** Format like Feishu: today → "15:13", yesterday → "Yesterday", older → "Mar 9" */
@@ -103,8 +104,8 @@ export class FeishuPanel extends Panel {
       const url = el.dataset.imgUrl;
       if (!url) continue;
       try {
-        const appId = (await import('@/services/settings-store')).getSecret('FEISHU_APP_ID');
-        const appSecret = (await import('@/services/settings-store')).getSecret('FEISHU_APP_SECRET');
+        const appId = getSecret('FEISHU_APP_ID');
+        const appSecret = getSecret('FEISHU_APP_SECRET');
         const resp = await fetch(url, {
           headers: { 'X-Feishu-App-Id': appId, 'X-Feishu-App-Secret': appSecret },
         });

@@ -33,6 +33,7 @@ openspace/config/config_mcp.json
 
 # Logs
 logs/
+*-build.log
 
 # GDPVal reference file cache (pre-downloaded from HuggingFace)
 gdpval_bench/ref_cache/

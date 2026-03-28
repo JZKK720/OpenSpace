@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "my-daily-monitor",
+      "name": "My Daily Monitor",
+      "description": "Always-on agents monitor dashboard with live panels, feeds, and AI workspace surfaces.",
+      "kind": "agent-app",
+      "icon": "radar",
+      "public_url_env": "MY_DAILY_MONITOR_PUBLIC_URL",
+      "internal_url_env": "MY_DAILY_MONITOR_INTERNAL_URL",
+      "health_url_env": "MY_DAILY_MONITOR_INTERNAL_URL",
+      "tags": ["showcase", "monitor", "dashboard"]
+    }
+  ]
+}
