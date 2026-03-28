@@ -167,6 +167,9 @@ openspace-mcp --help   # 验证安装
 > pip install -e .
 > ```
 
+> [!NOTE]
+> 如果你要在 Windows 上按 Cubecloud fork 的稳定发布标签进行部署或更新，请参见 [INSTALL_FORK_WINDOWS.md](INSTALL_FORK_WINDOWS.md)。
+
 **选择你的路径：**
 - **[路径 A](#-路径-a为你的-agent-接入)** — 将 OpenSpace 接入你的 Agent
 - **[路径 B](#-路径-b作为你的-ai-协作者)** — 直接使用 OpenSpace 作为你的 AI 协作者
