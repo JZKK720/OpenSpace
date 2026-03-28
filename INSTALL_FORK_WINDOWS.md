@@ -124,6 +124,34 @@ Pop-Location
 
 Then run the services using your preferred local startup flow.
 
+## Optional: Minimize the Local Source Footprint
+
+If you want to keep the containers runnable while moving runtime files out of the full source checkout, use:
+
+```powershell
+Set-Location C:\Users\cubecloud006\OpenSpace
+.\scripts\prepare_runtime_bundle.ps1 -CopyState
+```
+
+By default this exports a minimal runtime bundle to a sibling folder named `OpenSpace-runtime`.
+
+That bundle keeps:
+
+- `.env`
+- `docker-compose.yml`
+- `openspace/config/external_agents.json`
+- `openspace/config/standalone_apps.json`
+- optional `.openspace` and `logs` when `-CopyState` is used
+
+Then you can run the stack from that bundle folder with:
+
+```powershell
+Set-Location ..\OpenSpace-runtime
+docker compose up -d
+```
+
+Important: this reduces source exposure in the working checkout, but local Docker images still contain the application code and can be inspected by someone with Docker access on the machine.
+
 ## Updating to a New Tagged Release Later
 
 When you publish a new redistribution tag on your fork, update the script by replacing:
