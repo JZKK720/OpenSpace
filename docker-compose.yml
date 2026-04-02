@@ -84,6 +84,7 @@ services:
       - ./.openspace:/app/.openspace
       - ./logs:/app/logs
       - ./openspace/config/external_agents.json:/app/openspace/config/external_agents.json:ro
+    command: ["python", "-m", "openspace.mcp_server", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8080"]
     healthcheck:
       test:
         [
