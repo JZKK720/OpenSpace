@@ -290,23 +290,95 @@ npm run dev
 
 📖 **Frontend setup guide**: [`frontend/README.md`](frontend/README.md)
 
-**Docker Compose option**
+**Docker Compose stack**
 
-If you want a packaged local deployment instead of running Python and Vite directly:
+The Compose stack runs all four services in containers — the recommended deployment for any machine. Use `scripts/docker-up.ps1` (Windows/PowerShell) or the equivalent `docker compose` commands directly.
 
-```bash
-docker compose up --build -d
+#### First-time install
+
+```powershell
+git clone https://github.com/JZKK720/OpenSpace.git C:\OpenSpace
+Set-Location C:\OpenSpace
+Copy-Item .env.example .env        # then edit — see Required .env Values below
+.\scripts\docker-up.ps1
 ```
 
-Then open:
-- `http://127.0.0.1:7788` for OpenSpace
-- `http://127.0.0.1:5173` for Agents Monitor
+#### Routine update (pull + rebuild + restart)
 
-This Compose stack now brings up both web surfaces together:
-- `cubecloud-dashboard`: Flask dashboard server with bundled `frontend/dist`
-- `agents-monitor`: Node production server for `showcase/my-daily-monitor`, serving the built app plus its `/api/*` routes
+```powershell
+.\scripts\docker-up.ps1
+# or manually:
+git pull origin main
+docker compose build
+docker compose up -d --remove-orphans
+```
 
-It is intended for the **web dashboard surfaces** and their persisted data (`.openspace/`, `logs/`) rather than the full host-automation runtime.
+#### Force full rebuild (after base-image or dependency changes)
+
+```powershell
+.\scripts\docker-up.ps1 -Fresh
+# or manually:
+docker compose build --no-cache
+docker compose up -d --remove-orphans
+```
+
+#### Wipe containers then rebuild clean
+
+```powershell
+.\scripts\docker-up.ps1 -Down -Fresh
+# or manually:
+docker compose down -v
+docker compose build --no-cache
+docker compose up -d
+```
+
+#### Check status and logs
+
+```powershell
+.\scripts\docker-up.ps1 -Status
+docker compose ps
+docker compose logs -f                        # all services
+docker compose logs -f cubecloud-dashboard    # one service
+```
+
+#### Stop / teardown
+
+```powershell
+docker compose down       # stop containers, keep volumes
+docker compose down -v    # also remove anonymous volumes
+```
+
+#### Service URLs after stack is up
+
+| Service | URL |
+|---|---|
+| Cubecloud dashboard | `http://127.0.0.1:7788` |
+| Agents monitor | `http://127.0.0.1:5173` |
+| OpenSpace runtime MCP | `http://127.0.0.1:8788/mcp` |
+| OpenSpace remote MCP | `http://127.0.0.1:8789/mcp` |
+
+#### Required `.env` values
+
+```dotenv
+IRONCLAW_AUTH_TOKEN=your_token_here
+GATEWAY_AUTH_TOKEN=your_token_here
+```
+
+All other values have defaults in `.env.example`. Override IronClaw URLs if your deployment differs.
+
+#### Verify the stack
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:7788/api/v1/health -UseBasicParsing
+Invoke-RestMethod http://127.0.0.1:7788/api/v1/external-agents
+Invoke-RestMethod http://127.0.0.1:7788/api/v1/standalone-apps
+docker compose ps
+```
+
+Expected: external agent `ironclaw`, standalone app `my-daily-monitor`.
+
+> [!NOTE]
+> **Windows full guide:** [INSTALL_FORK_WINDOWS.md](INSTALL_FORK_WINDOWS.md) covers the local non-Docker build path and minimal runtime bundle options.
 
 **External agent registry and IronClaw**
 
