@@ -6,69 +6,80 @@ This guide installs or updates a Windows machine to the tagged Cubecloud fork re
 
 - Fork repository: `https://github.com/JZKK720/OpenSpace.git`
 - Stable tag: `cubecloud-2026.03.29`
-- Commit: `cf85e0232c06fc5cb755fbba7aa2bb72c4d80b2f`
+- Tracking branch: `main` (always latest)
 
 ## Prerequisites
 
 - Git
-- Python 3.12+
-- Node.js 20+
-- Docker Desktop if you want the packaged dashboard and monitor stack
+- Docker Desktop (required for the container stack)
+- Python 3.12+ and Node.js 20+ (only needed for local non-Docker builds)
 
-## Recommended: Docker Rollout Script
+## Docker Stack — Quick Reference
 
-This PowerShell script works for both a fresh install and an existing clean clone.
+All four services are managed by `docker compose`. Use `scripts/docker-up.ps1` for the full workflow.
 
-It will:
-
-- clone the fork if needed
-- fast-forward local `main` to your fork's `main`
-- pin the working tree to `cubecloud-2026.03.29`
-- install the Python package
-- create `.env` from `.env.example` if needed
-- build and start the Docker Compose stack
-
-> If the target machine has local changes, commit or stash them first. The script intentionally stops on a dirty worktree.
+### First-time install
 
 ```powershell
-$ErrorActionPreference = 'Stop'
+git clone https://github.com/JZKK720/OpenSpace.git C:\OpenSpace
+Set-Location C:\OpenSpace
+Copy-Item .env.example .env        # then edit IRONCLAW_AUTH_TOKEN etc.
+.\scripts\docker-up.ps1
+```
 
-$RepoUrl = 'https://github.com/JZKK720/OpenSpace.git'
-$InstallDir = 'C:\OpenSpace'
-$ReleaseTag = 'cubecloud-2026.03.29'
+### Routine update (after `git pull`)
 
-if (-not (Test-Path $InstallDir)) {
-    git clone $RepoUrl $InstallDir
-}
+```powershell
+.\scripts\docker-up.ps1            # pulls, rebuilds changed images, restarts
+```
 
-Set-Location $InstallDir
+### Force full rebuild (base-image or dependency change)
 
-if (-not (Test-Path '.git')) {
-    throw "'$InstallDir' exists but is not a git repository."
-}
+```powershell
+.\scripts\docker-up.ps1 -Fresh
+```
 
-$dirty = git status --porcelain
-if ($dirty) {
-    throw 'Working tree is not clean. Commit or stash local changes before running this rollout.'
-}
+### Wipe containers and rebuild from scratch
 
-git fetch origin --tags
-git fetch origin main
-git switch main
-git pull --ff-only origin main
-git switch --detach $ReleaseTag
+```powershell
+.\scripts\docker-up.ps1 -Down -Fresh
+```
 
-python -m pip install -e .
+### Build images only (no start)
 
-if (-not (Test-Path '.env')) {
-    Copy-Item .env.example .env
-    Write-Host 'Created .env from .env.example.'
-    Write-Host 'Set IRONCLAW_AUTH_TOKEN and GATEWAY_AUTH_TOKEN before using the connected-agent flow.'
-}
+```powershell
+.\scripts\docker-up.ps1 -Build
+```
 
-docker compose up -d --build
+### Check running container status
 
-Write-Host "Installed $ReleaseTag from $RepoUrl"
+```powershell
+.\scripts\docker-up.ps1 -Status
+# or directly:
+docker compose ps
+```
+
+### Service URLs after stack is up
+
+| Service | URL |
+|---|---|
+| Cubecloud dashboard | `http://127.0.0.1:7788` |
+| Agents monitor | `http://127.0.0.1:5173` |
+| OpenSpace runtime MCP | `http://127.0.0.1:8788/mcp` |
+| OpenSpace remote MCP | `http://127.0.0.1:8789/mcp` |
+
+### Logs
+
+```powershell
+docker compose logs -f                          # all services
+docker compose logs -f cubecloud-dashboard      # one service
+```
+
+### Stop / teardown
+
+```powershell
+docker compose down          # stop and remove containers (keeps volumes)
+docker compose down -v       # also remove anonymous volumes
 ```
 
 ## Required `.env` Values
