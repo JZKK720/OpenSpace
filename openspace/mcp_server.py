@@ -932,6 +932,26 @@ def run_mcp_server() -> None:
         mcp.run(transport="sse", mount_path=args.mount_path)
         return
 
+    # Disable FastMCP's DNS-rebinding protection for the streamable-http transport.
+    # This server runs inside Docker (bound to 0.0.0.0) and is accessed by other
+    # containers using their service hostnames (e.g. host.docker.internal:<port>).
+    # The browser-oriented DNS-rebinding attack vector does not apply here.
+    # OPENSPACE_MCP_DISABLE_DNS_REBINDING_PROTECTION=false (env) can override this.
+    _disable_rebinding = os.environ.get(
+        "OPENSPACE_MCP_DISABLE_DNS_REBINDING_PROTECTION", ""
+    ).strip().lower() not in {"0", "false", "no"}
+    if _disable_rebinding:
+        try:
+            from mcp.server.fastmcp.server import TransportSecuritySettings
+            mcp.settings.transport_security = TransportSecuritySettings(
+                enable_dns_rebinding_protection=False
+            )
+        except Exception:
+            pass  # Older FastMCP versions don't have TransportSecuritySettings
+    # Use stateless HTTP so callers (e.g. IronClaw) don't need to maintain a
+    # server-side session.  Without this, a container restart or session expiry
+    # causes "Session not found" 404 errors on subsequent tool calls.
+    mcp.settings.stateless_http = True
     mcp.run(transport="streamable-http")
 
 

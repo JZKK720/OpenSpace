@@ -21,12 +21,14 @@ services:
       OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      FASTMCP_TRANSPORT_SECURITY__ENABLE_DNS_REBINDING_PROTECTION: "false"
     ports:
       - "127.0.0.1:${OPENSPACE_REMOTE_AGENT_PORT:-8789}:8080"
     volumes:
       - ./.openspace:/app/.openspace
       - ./logs:/app/logs
       - ./openspace/config/external_agents.json:/app/openspace/config/external_agents.json:ro
+    command: ["python", "-m", "openspace.mcp_server", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8080"]
     healthcheck:
       test:
         [
@@ -73,9 +75,9 @@ services:
       IRONCLAW_AUTH_TOKEN: "${IRONCLAW_AUTH_TOKEN:-}"
       GATEWAY_AUTH_TOKEN: "${GATEWAY_AUTH_TOKEN:-}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
-      OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/sse"
-      OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/sse"
-      OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/sse"
+      OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
+      OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
+      OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
     ports:
       - "127.0.0.1:${OPENSPACE_RUNTIME_PORT:-8788}:8080"
     volumes:
@@ -115,9 +117,9 @@ services:
       IRONCLAW_HEALTH_URL: "${IRONCLAW_HEALTH_URL:-http://host.docker.internal:3231/}"
       IRONCLAW_ACTION_URL: "${IRONCLAW_ACTION_URL:-http://host.docker.internal:3231/api/chat/send}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
-      OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/sse"
-      OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/sse"
-      OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/sse"
+      OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
+      OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
+      OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
     healthcheck:
       test:
         [
@@ -157,9 +159,9 @@ services:
       IRONCLAW_AUTH_TOKEN: "${IRONCLAW_AUTH_TOKEN:-}"
       GATEWAY_AUTH_TOKEN: "${GATEWAY_AUTH_TOKEN:-}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
-      OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/sse"
-      OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/sse"
-      OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/sse"
+      OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
+      OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
+      OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
     volumes:
       - ./.openspace:/app/.openspace
       - ./logs:/app/logs
