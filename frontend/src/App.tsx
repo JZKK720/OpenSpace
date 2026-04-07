@@ -8,7 +8,6 @@ const SkillsPage = lazy(() => import('./pages/SkillsPage'));
 const SkillDetailPage = lazy(() => import('./pages/SkillDetailPage'));
 const WorkflowsPage = lazy(() => import('./pages/WorkflowsPage'));
 const WorkflowDetailPage = lazy(() => import('./pages/WorkflowDetailPage'));
-const NanobotChatPage = lazy(() => import('./pages/NanobotChatPage'));
 
 function withSuspense(element: React.ReactElement) {
   return (
@@ -30,7 +29,6 @@ const router = createBrowserRouter([
       { path: 'skills/:skillId', element: withSuspense(<SkillDetailPage />) },
       { path: 'workflows', element: withSuspense(<WorkflowsPage />) },
       { path: 'workflows/:workflowId', element: withSuspense(<WorkflowDetailPage />) },
-      { path: 'nanobot', element: withSuspense(<NanobotChatPage />) },
     ],
   },
 ]);

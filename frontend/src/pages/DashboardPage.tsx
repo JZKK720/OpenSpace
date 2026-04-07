@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { overviewApi, type OverviewResponse } from '../api';
+import { externalAgentsApi, overviewApi, type ExternalAgentStatus, type OverviewResponse } from '../api';
+import ExternalAgentCard from '../components/ExternalAgentCard';
 import MetricCard from '../components/MetricCard';
 import EmptyState from '../components/EmptyState';
 import { formatDate, formatInstruction, formatPercent, truncate } from '../utils/format';
@@ -11,6 +12,8 @@ export default function DashboardPage() {
   const [data, setData] = useState<OverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [agents, setAgents] = useState<ExternalAgentStatus[]>([]);
+  const [agentsChecking, setAgentsChecking] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,6 +40,28 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [t]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAgents = async () => {
+      try {
+        const items = await externalAgentsApi.getExternalAgents();
+        if (!cancelled) {
+          setAgents(items);
+        }
+      } catch {
+        // non-fatal: agents section shows empty state
+      } finally {
+        if (!cancelled) {
+          setAgentsChecking(false);
+        }
+      }
+    };
+    void loadAgents();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (loading) {
     return <div className="p-6 text-sm text-muted">{t('dashboard.loadingDashboard')}</div>;
@@ -131,6 +156,29 @@ export default function DashboardPage() {
                     <span>{formatDate(workflow.start_time)}</span>
                   </div>
                 </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <div className="panel-surface p-5 space-y-4">
+          <div>
+            <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsKicker')}</div>
+            <h2 className="text-2xl font-bold font-serif mt-1">{t('dashboard.externalAgentsTitle')}</h2>
+            {!agentsChecking ? (
+              <div className="text-xs text-muted mt-1">{t('dashboard.externalAgentsCount', { count: agents.length })}</div>
+            ) : null}
+          </div>
+          {agentsChecking ? (
+            <div className="text-sm text-muted">{t('dashboard.externalAgentsChecking')}</div>
+          ) : agents.length === 0 ? (
+            <EmptyState title={t('dashboard.externalAgentsEmptyTitle')} description={t('dashboard.externalAgentsEmptyDescription')} />
+          ) : (
+            <div className="space-y-4">
+              {agents.map((agent) => (
+                <ExternalAgentCard key={agent.id} agent={agent} />
               ))}
             </div>
           )}
