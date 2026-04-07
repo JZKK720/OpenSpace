@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { externalAgentsApi } from '../api';
-import { useI18n } from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 interface ChatMessage {
   id: string;
@@ -16,7 +16,7 @@ function nextId(): string {
 }
 
 export default function NanobotChatPage() {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [input, setInput] = useState('');
