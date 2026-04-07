@@ -176,7 +176,7 @@ export default function DashboardPage() {
           ) : agents.length === 0 ? (
             <EmptyState title={t('dashboard.externalAgentsEmptyTitle')} description={t('dashboard.externalAgentsEmptyDescription')} />
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 items-start">
               {agents.map((agent) => (
                 <ExternalAgentCard key={agent.id} agent={agent} />
               ))}
