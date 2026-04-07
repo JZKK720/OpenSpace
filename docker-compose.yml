@@ -25,7 +25,7 @@ services:
     ports:
       - "127.0.0.1:${OPENSPACE_REMOTE_AGENT_PORT:-8789}:8080"
     volumes:
-      - ./.openspace:/app/.openspace
+      - openspace_data:/app/.openspace
       - ./logs:/app/logs
       - ./openspace/config/external_agents.json:/app/openspace/config/external_agents.json:ro
     command: ["python", "-m", "openspace.mcp_server", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8080"]
@@ -75,13 +75,17 @@ services:
       IRONCLAW_AUTH_TOKEN: "${IRONCLAW_AUTH_TOKEN:-}"
       GATEWAY_AUTH_TOKEN: "${GATEWAY_AUTH_TOKEN:-}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
+      NANOBOT_PUBLIC_URL: "${NANOBOT_PUBLIC_URL:-http://127.0.0.1:18790/}"
+      NANOBOT_INTERNAL_URL: "${NANOBOT_INTERNAL_URL:-http://host.docker.internal:18790/}"
+      NANOBOT_HEALTH_URL: "${NANOBOT_HEALTH_URL:-http://host.docker.internal:18790/health}"
+      NANOBOT_ACTION_URL: "${NANOBOT_ACTION_URL:-http://host.docker.internal:18790/v1/chat/completions}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
     ports:
       - "127.0.0.1:${OPENSPACE_RUNTIME_PORT:-8788}:8080"
     volumes:
-      - ./.openspace:/app/.openspace
+      - openspace_data:/app/.openspace
       - ./logs:/app/logs
       - ./openspace/config/external_agents.json:/app/openspace/config/external_agents.json:ro
     command: ["python", "-m", "openspace.mcp_server", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8080"]
@@ -118,6 +122,10 @@ services:
       IRONCLAW_HEALTH_URL: "${IRONCLAW_HEALTH_URL:-http://host.docker.internal:3231/}"
       IRONCLAW_ACTION_URL: "${IRONCLAW_ACTION_URL:-http://host.docker.internal:3231/api/chat/send}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
+      NANOBOT_PUBLIC_URL: "${NANOBOT_PUBLIC_URL:-http://127.0.0.1:18790/}"
+      NANOBOT_INTERNAL_URL: "${NANOBOT_INTERNAL_URL:-http://host.docker.internal:18790/}"
+      NANOBOT_HEALTH_URL: "${NANOBOT_HEALTH_URL:-http://host.docker.internal:18790/health}"
+      NANOBOT_ACTION_URL: "${NANOBOT_ACTION_URL:-http://host.docker.internal:18790/v1/chat/completions}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
@@ -160,11 +168,15 @@ services:
       IRONCLAW_AUTH_TOKEN: "${IRONCLAW_AUTH_TOKEN:-}"
       GATEWAY_AUTH_TOKEN: "${GATEWAY_AUTH_TOKEN:-}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
+      NANOBOT_PUBLIC_URL: "${NANOBOT_PUBLIC_URL:-http://127.0.0.1:18790/}"
+      NANOBOT_INTERNAL_URL: "${NANOBOT_INTERNAL_URL:-http://host.docker.internal:18790/}"
+      NANOBOT_HEALTH_URL: "${NANOBOT_HEALTH_URL:-http://host.docker.internal:18790/health}"
+      NANOBOT_ACTION_URL: "${NANOBOT_ACTION_URL:-http://host.docker.internal:18790/v1/chat/completions}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
     volumes:
-      - ./.openspace:/app/.openspace
+      - openspace_data:/app/.openspace
       - ./logs:/app/logs
       - ./openspace/config/external_agents.json:/app/openspace/config/external_agents.json:ro
       - ./openspace/config/standalone_apps.json:/app/openspace/config/standalone_apps.json:ro
@@ -181,3 +193,6 @@ services:
       retries: 5
       start_period: 15s
     restart: unless-stopped
+
+volumes:
+  openspace_data:

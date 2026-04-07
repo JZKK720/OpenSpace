@@ -31,6 +31,22 @@
       "mcp_auth_token_env": "IRONCLAW_AUTH_TOKEN",
       "linked_mcp_servers": ["openspace-remote"],
       "tags": ["assistant", "delegate", "ironclaw"]
+    },
+    {
+      "id": "nanobot",
+      "name": "Nanobot",
+      "description": "MCP-based autonomous agent runtime. Chat with your local nanobot instance through a browser-friendly interface.",
+      "kind": "acting-agent",
+      "protocol": "nanobot-mcp",
+      "capabilities": ["handoff", "history"],
+      "handoff_mode": "chat_thread",
+      "history_mode": "thread_history",
+      "public_url_env": "NANOBOT_PUBLIC_URL",
+      "internal_url_env": "NANOBOT_INTERNAL_URL",
+      "health_url_env": "NANOBOT_HEALTH_URL",
+      "action_url_env": "NANOBOT_ACTION_URL",
+      "history_url_env": "NANOBOT_ACTION_URL",
+      "tags": ["assistant", "delegate", "nanobot"]
     }
   ]
 }

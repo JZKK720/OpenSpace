@@ -12,6 +12,7 @@ from openspace.chat_thread_gateway import (
     get_chat_thread_history,
     submit_chat_thread_handoff,
 )
+from openspace import nanobot_gateway as _nanobot
 
 
 class ExternalAgentGatewayError(RuntimeError):
@@ -204,9 +205,63 @@ class HttpJsonAdapter(ExternalAgentAdapter):
             "latestTurn": latest_turn,
         }
 
+
+class NanobotAdapter(ExternalAgentAdapter):
+    """Adapter for nanobot's OpenAI-compatible serve API (nanobot serve)."""
+
+    protocol_ids = ("nanobot-mcp",)
+
+    def handoff(
+        self,
+        agent: Dict[str, Any],
+        *,
+        prompt: str,
+        thread_id: str | None = None,
+        timezone: str = "UTC",
+        history_limit: int = 10,
+    ) -> Dict[str, Any]:
+        action_url = str(agent.get("actionUrl") or "").strip()
+        if not action_url:
+            raise ExternalAgentGatewayError(
+                "Nanobot action URL is not configured", status_code=400
+            )
+        # Derive base URL by stripping known API path suffixes
+        base_url = action_url
+        for suffix in ("/v1/chat/completions", "/v1/chat", "/v1", "/mcp/chat", "/mcp"):
+            if base_url.rstrip("/").endswith(suffix):
+                base_url = base_url.rstrip("/")[: -len(suffix)]
+                break
+        try:
+            return _nanobot.send_message(
+                base_url,
+                prompt,
+                thread_id=thread_id or None,
+                timeout=90.0,
+            )
+        except _nanobot.NanobotGatewayError as exc:
+            raise ExternalAgentGatewayError(
+                str(exc), status_code=exc.status_code
+            ) from exc
+
+    def history(
+        self,
+        agent: Dict[str, Any],
+        *,
+        thread_id: str,
+        limit: int = 10,
+    ) -> Dict[str, Any]:
+        try:
+            return _nanobot.get_history(thread_id)
+        except _nanobot.NanobotGatewayError as exc:
+            raise ExternalAgentGatewayError(
+                str(exc), status_code=exc.status_code
+            ) from exc
+
+
 _ADAPTERS: List[ExternalAgentAdapter] = [
     ChatThreadAdapter(),
     HttpJsonAdapter(),
+    NanobotAdapter(),
 ]
 
 
