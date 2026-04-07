@@ -1,5 +1,4 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import i18n from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -29,26 +28,25 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      const t = i18n.t.bind(i18n);
       return (
         this.props.fallback || (
           <div className="min-h-screen flex items-center justify-center bg-[color:var(--color-bg-page)]">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-[color:var(--color-danger)] mb-4">
-                {t('errorBoundary.title')}
+                Something went wrong
               </h1>
               <p className="text-[color:var(--color-muted)] mb-6">
-                {t('errorBoundary.message')}
+                An unexpected error occurred. Please try refreshing the page.
               </p>
               <button
                 onClick={() => window.location.href = '/dashboard'}
                 className="btn-primary"
               >
-                {t('errorBoundary.goToDashboard')}
+                Go to Dashboard
               </button>
               {import.meta.env.DEV && this.state.error && (
                 <details className="mt-4 text-left text-xs text-[color:var(--color-muted)]">
-                  <summary>{t('errorBoundary.details')}</summary>
+                  <summary>Error details</summary>
                   <pre className="mt-2 p-4 bg-[color:var(--color-surface)] overflow-auto">
                     {this.state.error.stack}
                   </pre>
