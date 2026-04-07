@@ -8,10 +8,6 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export default function MainLayout() {
   const { t, i18n } = useTranslation();
-  const vitePort = import.meta.env.VITE_PORT || '3888';
-  const runtimeLabel = import.meta.env.DEV
-    ? t('layout.runtimeDev', { apiPort: '7788', vitePort })
-    : t('layout.runtimeProd', { port: '7788' });
 
   return (
     <div className="h-screen min-w-[1180px] relative flex flex-col overflow-x-auto overflow-y-hidden bg-bg-page text-ink">
@@ -33,11 +29,8 @@ export default function MainLayout() {
             </NavLink>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted">
-          <div>{runtimeLabel}</div>
-          <div className="flex items-center gap-2">
-            <span>{t('layout.language')}</span>
-            <div className="flex gap-1">
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <div className="flex gap-1">
               <button
                 type="button"
                 onClick={() => i18n.changeLanguage('en')}
@@ -60,7 +53,6 @@ export default function MainLayout() {
               >
                 中文
               </button>
-            </div>
           </div>
         </div>
       </nav>
@@ -69,9 +61,10 @@ export default function MainLayout() {
         <Outlet />
       </main>
 
-      <footer className="relative z-10 border-t border-[color:var(--color-border)] bg-bg-page px-4 py-2 text-[11px] leading-5 text-muted">
-        <div className="font-semibold text-ink">{t('layout.legalPrimary')}</div>
-        <div>{t('layout.legalSecondary')}</div>
+      <footer className="relative z-10 border-t border-[color:var(--color-border)] bg-bg-page px-4 py-2 text-[11px] text-muted flex items-center gap-2">
+        <span>{t('layout.legalPrimary')}</span>
+        <span className="opacity-40">·</span>
+        <span>{t('layout.legalSecondary')}</span>
       </footer>
     </div>
   );

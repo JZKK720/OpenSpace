@@ -1,6 +1,6 @@
 {
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "OpenSpace",
     "skills": "Skills",
     "workflows": "Workflows",
     "nanobot": "Nanobot"
@@ -34,7 +34,7 @@
     "details": "Error details"
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "OpenSpace",
     "loadingDashboard": "Loading dashboard…",
     "failedToLoad": "Failed to load overview",
     "dashboardUnavailable": "Dashboard unavailable",
@@ -287,8 +287,8 @@
   },
   "layout": {
     "spotlight": "Showcase",
-    "legalPrimary": "© 2026 智方云 Cubecloud.io",
-    "legalSecondary": "Code under MIT. Cubecloud name, logo, and branding reserved. Based on OpenSpace."
+    "legalPrimary": "© 2026 Cubecloud.io",
+    "legalSecondary": "MIT · Built on OpenSpace"
   },
   "showcase": {
     "loading": "Loading Showcase…",
