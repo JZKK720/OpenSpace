@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { externalAgentsApi, type ExternalAgentHandoffResponse, type ExternalAgentHistoryResponse, type ExternalAgentStatus } from '../api';
 import { useTranslation } from 'react-i18next';
-import { formatDate, truncate } from '../utils/format';
+import { formatDate } from '../utils/format';
 
 interface ExternalAgentCardProps {
   agent: ExternalAgentStatus;
@@ -116,72 +116,39 @@ export default function ExternalAgentCard({ agent }: ExternalAgentCardProps) {
   };
 
   return (
-    <div className="record-card p-4 space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2 min-w-0">
-          <div className="font-bold text-xl truncate">{agent.name}</div>
-          <div className="text-sm text-muted max-w-[56ch]">{agent.description || agent.publicUrl || agent.healthUrl || t('common.unavailable')}</div>
-          <div className="flex flex-wrap gap-2">
-            <span className="tag px-3 py-1 text-xs text-muted">{agent.kind}</span>
-            <span className={`tag px-3 py-1 text-xs ${agent.available ? '' : 'text-muted'}`}>
-              {agent.available ? t('dashboard.externalAgentsReachable') : t('dashboard.externalAgentsUnavailable')}
-            </span>
-            {threadId ? (
-              <span className="tag px-3 py-1 text-xs text-muted">{t('dashboard.externalAgentsThreadActive')}</span>
-            ) : null}
-          </div>
+    <div className="record-card p-3 space-y-3">
+      {/* Header: name + status */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="font-bold truncate">{agent.name}</div>
+          <div className="text-xs text-muted truncate mt-0.5">{agent.description || agent.healthUrl || t('common.unavailable')}</div>
         </div>
-        <div className="text-right shrink-0 text-xs text-muted space-y-1">
-          <div>{agent.statusCode ? t('dashboard.externalAgentsStatusCode', { status: agent.statusCode }) : t('dashboard.externalAgentsNoProbe')}</div>
-          <div>{agent.latencyMs !== null ? t('dashboard.externalAgentsLatency', { latency: agent.latencyMs }) : t('dashboard.externalAgentsNoProbe')}</div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span className={`tag px-2 py-0.5 text-xs ${agent.available ? 'text-primary' : 'text-muted'}`}>
+            {agent.available ? t('dashboard.externalAgentsReachable') : t('dashboard.externalAgentsUnavailable')}
+          </span>
+          {agent.latencyMs !== null ? (
+            <span className="text-[11px] text-muted">{t('dashboard.externalAgentsLatency', { latency: agent.latencyMs })}</span>
+          ) : null}
         </div>
       </div>
 
-      {agent.tags.length > 0 ? (
-        <div className="showcase-chip-row">
-          {agent.tags.map((tag) => (
-            <span key={`${agent.id}-${tag}`} className="chip">{tag}</span>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="space-y-2 text-sm">
-        <div className="flex items-start justify-between gap-4">
-          <span className="text-muted">{t('dashboard.externalAgentsHealth')}</span>
-          <span className="text-right break-all">{agent.healthUrl || t('common.unavailable')}</span>
-        </div>
-        {agent.hasActionUrl ? (
-          <div className="flex items-start justify-between gap-4">
-            <span className="text-muted">{t('dashboard.externalAgentsAction')}</span>
-            <span className="text-right break-all">{agent.actionUrl}</span>
-          </div>
-        ) : null}
-        {agent.hasMcpUrl ? (
-          <div className="flex items-start justify-between gap-4">
-            <span className="text-muted">{t('dashboard.externalAgentsMcp')}</span>
-            <span className="text-right break-all">{agent.mcpUrl}</span>
-          </div>
-        ) : null}
-      </div>
-
+      {/* Chat / handoff */}
       {canHandoff ? (
-        <div className="panel-subtle p-4 space-y-3 bg-[color:var(--color-bg-page)]">
-          <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsHandoffKicker')}</div>
-            <div className="font-bold mt-1">{t('dashboard.externalAgentsHandoffTitle')}</div>
-          </div>
+        <div className="space-y-2">
           <textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             placeholder={t('dashboard.externalAgentsPromptPlaceholder')}
-            rows={4}
-            className="w-full p-3 field-surface resize-y min-h-[112px]"
+            rows={2}
+            className="w-full p-2 text-sm field-surface resize-none"
+            disabled={submitting}
           />
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              className="btn-primary text-sm"
-              disabled={submitting || !agent.available || !canHandoff}
+              className="btn-primary text-xs"
+              disabled={submitting || !agent.available || !prompt.trim()}
               onClick={() => { void handleSubmit(); }}
             >
               {submitting ? t('dashboard.externalAgentsSending') : t('dashboard.externalAgentsSend')}
@@ -189,7 +156,7 @@ export default function ExternalAgentCard({ agent }: ExternalAgentCardProps) {
             {threadId && canPollHistory ? (
               <button
                 type="button"
-                className="btn-outline-ink text-sm"
+                className="btn-outline-ink text-xs"
                 disabled={refreshing}
                 onClick={() => { void handleRefresh(); }}
               >
@@ -197,65 +164,43 @@ export default function ExternalAgentCard({ agent }: ExternalAgentCardProps) {
               </button>
             ) : null}
             {threadId ? (
-              <button
-                type="button"
-                className="btn-outline-ink text-sm"
-                onClick={handleReset}
-              >
+              <button type="button" className="btn-outline-ink text-xs" onClick={handleReset}>
                 {t('dashboard.externalAgentsStartFresh')}
               </button>
             ) : null}
+            {agent.publicUrl ? (
+              <a className="btn-outline-ink text-xs ml-auto" href={agent.publicUrl} target="_blank" rel="noopener noreferrer">
+                {t('dashboard.externalAgentsOpen')}
+              </a>
+            ) : null}
           </div>
-          {!agent.available ? <div className="text-xs text-muted">{t('dashboard.externalAgentsUnavailableHint')}</div> : null}
           {error ? <div className="text-xs text-danger">{error}</div> : null}
+          {!agent.available ? <div className="text-xs text-muted">{t('dashboard.externalAgentsUnavailableHint')}</div> : null}
+        </div>
+      ) : null}
 
-          {handoff ? (
-            <div className="space-y-3 text-sm">
-              <div className="grid gap-2 md:grid-cols-2">
-                <div className="field-surface p-3 space-y-1">
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsThread')}</div>
-                  <div className="font-mono text-xs break-all">{handoff.threadId}</div>
-                </div>
-                <div className="field-surface p-3 space-y-1">
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsLatestState')}</div>
-                  <div>{latestTurn?.state || handoffStatus || t('common.unavailable')}</div>
-                </div>
-              </div>
-              {latestTurn?.started_at ? (
-                <div className="text-xs text-muted">{t('dashboard.externalAgentsUpdatedAt', { time: formatDate(latestTurn.completed_at || latestTurn.started_at) })}</div>
-              ) : null}
-              {latestTurn?.user_input ? (
-                <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsLatestPrompt')}</div>
-                  <div>{truncate(latestTurn.user_input, 220)}</div>
-                </div>
-              ) : null}
-              {latestResponse ? (
-                <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsLatestResponse')}</div>
-                  <pre className="field-surface p-3 text-xs overflow-auto max-h-[220px] whitespace-pre-wrap break-words">{latestResponse}</pre>
-                </div>
-              ) : awaitingResponse ? (
-                <div className="text-xs text-muted">{t('dashboard.externalAgentsAwaitingResponse')}</div>
-              ) : null}
-            </div>
+      {/* Response */}
+      {handoff ? (
+        <div className="space-y-1.5 text-xs">
+          <div className="flex items-center gap-2 text-muted">
+            <span className="font-mono truncate max-w-[22ch]">{handoff.threadId}</span>
+            <span className="shrink-0">·</span>
+            <span className="shrink-0">{latestTurn?.state || handoffStatus || '…'}</span>
+            {latestTurn?.started_at ? (
+              <span className="ml-auto shrink-0">{formatDate(latestTurn.completed_at || latestTurn.started_at)}</span>
+            ) : null}
+          </div>
+          {latestResponse ? (
+            <pre className="field-surface p-2 text-xs overflow-auto max-h-[140px] whitespace-pre-wrap break-words">{latestResponse}</pre>
+          ) : awaitingResponse ? (
+            <div className="text-muted">{t('dashboard.externalAgentsAwaitingResponse')}</div>
           ) : null}
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
-        {agent.publicUrl ? (
-          <a
-            className="btn-outline-ink text-sm"
-            href={agent.publicUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('dashboard.externalAgentsOpen')}
-          </a>
-        ) : null}
-        {!agent.available && agent.error ? <div className="text-xs text-danger">{agent.error}</div> : null}
-      </div>
+      {!agent.available && agent.error && !canHandoff ? (
+        <div className="text-xs text-danger">{agent.error}</div>
+      ) : null}
     </div>
   );
 }
