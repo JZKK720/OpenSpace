@@ -4,10 +4,10 @@ import { standaloneAppsApi, type StandaloneAppStatus } from '../api';
 import SpotlightIcon from '../components/SpotlightIcon';
 import EmptyState from '../components/EmptyState';
 import { useExternalAgentsAvailability } from '../hooks/useExternalAgentsAvailability';
-import { useI18n } from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 export default function ShowcasePage() {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const externalAgents = useExternalAgentsAvailability();
   const [apps, setApps] = useState<StandaloneAppStatus[]>([]);
   const [loading, setLoading] = useState(true);

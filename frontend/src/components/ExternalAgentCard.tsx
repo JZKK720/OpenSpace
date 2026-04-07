@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { externalAgentsApi, type ExternalAgentHandoffResponse, type ExternalAgentHistoryResponse, type ExternalAgentStatus } from '../api';
-import { useI18n } from '../i18n';
+import { useTranslation } from 'react-i18next';
 import { formatDate, truncate } from '../utils/format';
 
 interface ExternalAgentCardProps {
@@ -14,7 +14,7 @@ function isTurnActive(state?: string | null) {
 }
 
 export default function ExternalAgentCard({ agent }: ExternalAgentCardProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [prompt, setPrompt] = useState('');
   const [handoff, setHandoff] = useState<ExternalAgentHandoffResponse | ExternalAgentHistoryResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);

@@ -2,7 +2,8 @@
   "nav": {
     "dashboard": "仪表盘",
     "skills": "Skills",
-    "workflows": "工作流"
+    "workflows": "工作流",
+    "nanobot": "Nanobot"
   },
   "common": {
     "loading": "加载中…",
@@ -63,7 +64,41 @@
     "workflowsSection": "工作流",
     "recentSessions": "近期会话",
     "noWorkflowSessions": "暂无工作流会话",
-    "noWorkflowDesc": "启用录制后执行任务，录制数据将在此显示。"
+    "noWorkflowDesc": "启用录制后执行任务，录制数据将在此显示。",
+    "externalAgentsKicker": "已连接智能体",
+    "externalAgentsTitle": "IronClaw 与已连接智能体",
+    "externalAgentsChecking": "正在检查智能体状态…",
+    "externalAgentsCount": "已声明 {{count}} 个",
+    "externalAgentsEmptyTitle": "还没有声明已连接智能体",
+    "externalAgentsEmptyDescription": "在 openspace/config/external_agents.json 中添加条目后，这里会显示 IronClaw 和其他已连接智能体。",
+    "externalAgentsReachable": "可达",
+    "externalAgentsUnavailable": "不可达",
+    "externalAgentsStatusCode": "HTTP {{status}}",
+    "externalAgentsLatency": "延迟 {{latency}}ms",
+    "externalAgentsNoProbe": "还没有探测结果",
+    "externalAgentsHealth": "健康检查 URL",
+    "externalAgentsAction": "网关 URL",
+    "externalAgentsMcp": "已链接 MCP URL",
+    "externalAgentsOpen": "打开智能体",
+    "externalAgentsHandoffKicker": "实时委派",
+    "externalAgentsHandoffTitle": "向该智能体发送任务",
+    "externalAgentsPromptPlaceholder": "描述要由 OpenSpace 委派给 IronClaw 或其他已连接智能体的任务…",
+    "externalAgentsPromptRequired": "请先输入要发送给已连接智能体的任务。",
+    "externalAgentsSend": "发送任务",
+    "externalAgentsSending": "发送中…",
+    "externalAgentsRefresh": "刷新状态",
+    "externalAgentsRefreshing": "刷新中…",
+    "externalAgentsRefreshFailed": "刷新已连接智能体状态失败",
+    "externalAgentsSubmitFailed": "发送任务到已连接智能体失败",
+    "externalAgentsUnavailableHint": "该智能体当前不可达，恢复在线前无法继续委派。",
+    "externalAgentsThread": "线程",
+    "externalAgentsThreadActive": "线程进行中",
+    "externalAgentsLatestState": "最新状态",
+    "externalAgentsUpdatedAt": "更新时间 {{time}}",
+    "externalAgentsLatestPrompt": "最新任务",
+    "externalAgentsLatestResponse": "最新响应",
+    "externalAgentsAwaitingResponse": "已连接智能体已接受任务，仍在处理中。",
+    "externalAgentsStartFresh": "新开线程"
   },
   "skills": {
     "title": "Skill 类别",
@@ -249,5 +284,50 @@
   },
   "format": {
     "noInstruction": "未捕获到指令"
+  },
+  "layout": {
+    "spotlight": "案例展示",
+    "legalPrimary": "© 2026 智方云 Cubecloud.io",
+    "legalSecondary": "代码按 MIT 开放；Cubecloud 名称、Logo 与品牌标识保留权利。基于 OpenSpace 构建。"
+  },
+  "showcase": {
+    "loading": "正在加载案例展示…",
+    "unavailable": "案例展示不可用",
+    "kicker": "案例展示",
+    "title": "OpenSpace AI 智能体应用平台",
+    "backToDashboard": "返回 OpenSpace",
+    "appsMetric": "应用数",
+    "liveMetric": "在线",
+    "externalMetric": "已连接智能体",
+    "statusLive": "在线",
+    "statusDown": "不可用",
+    "appsKicker": "精选应用",
+    "appsTitle": "My Daily Monitor 与应用平台",
+    "appsCountSummary": "{{live}} 个在线 · 共 {{total}} 个应用",
+    "appsEmptyTitle": "还没有部署应用",
+    "appsEmptyDescription": "在 openspace/config/standalone_apps.json 中添加条目后，这里就会显示更多 Cubecloud 应用卡片。",
+    "openApp": "打开应用",
+    "appUrl": "公开地址",
+    "appHealth": "可用性",
+    "appLatency": "延迟",
+    "monitorHealthy": "健康",
+    "monitorUnhealthy": "当前不可达",
+    "agentsKicker": "已连接智能体",
+    "agentsTitle": "IronClaw 与已连接智能体",
+    "agentsChecking": "正在检查已连接智能体…",
+    "agentsCount": "已声明 {{count}} 个",
+    "agentsEmptyTitle": "还没有声明已连接智能体",
+    "agentsEmptyDescription": "在 openspace/config/external_agents.json 中添加条目后，这里和主仓表盘都会显示 IronClaw 与其他已连接智能体。",
+    "openAgent": "打开智能体"
+  },
+  "nanobot": {
+    "title": "Nanobot 对话",
+    "new_conversation": "新会话",
+    "placeholder": "输入消息… (Shift+Enter 换行)",
+    "send": "发送",
+    "status": {
+      "waiting": "Nanobot 正在思考…",
+      "error": "出现错误，请重试。"
+    }
   }
 }

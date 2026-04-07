@@ -2,7 +2,8 @@
   "nav": {
     "dashboard": "Dashboard",
     "skills": "Skills",
-    "workflows": "Workflows"
+    "workflows": "Workflows",
+    "nanobot": "Nanobot"
   },
   "common": {
     "loading": "Loading…",
@@ -63,7 +64,41 @@
     "workflowsSection": "Workflows",
     "recentSessions": "Recent sessions",
     "noWorkflowSessions": "No workflow sessions",
-    "noWorkflowDesc": "Recordings will appear after a task is executed with recording enabled."
+    "noWorkflowDesc": "Recordings will appear after a task is executed with recording enabled.",
+    "externalAgentsKicker": "Connected agents",
+    "externalAgentsTitle": "IronClaw and connected agents",
+    "externalAgentsChecking": "Checking agent status…",
+    "externalAgentsCount": "{{count}} declared",
+    "externalAgentsEmptyTitle": "No connected agents declared",
+    "externalAgentsEmptyDescription": "Add entries in openspace/config/external_agents.json to surface IronClaw and other connected agents here.",
+    "externalAgentsReachable": "Reachable",
+    "externalAgentsUnavailable": "Unavailable",
+    "externalAgentsStatusCode": "HTTP {{status}}",
+    "externalAgentsLatency": "Latency {{latency}}ms",
+    "externalAgentsNoProbe": "No probe yet",
+    "externalAgentsHealth": "Health URL",
+    "externalAgentsAction": "Gateway URL",
+    "externalAgentsMcp": "Linked MCP URL",
+    "externalAgentsOpen": "Open agent",
+    "externalAgentsHandoffKicker": "Live delegation",
+    "externalAgentsHandoffTitle": "Send work to this agent",
+    "externalAgentsPromptPlaceholder": "Describe the task you want OpenSpace to hand off to IronClaw or another connected agent…",
+    "externalAgentsPromptRequired": "Enter a task before sending it to a connected agent.",
+    "externalAgentsSend": "Send task",
+    "externalAgentsSending": "Sending…",
+    "externalAgentsRefresh": "Refresh status",
+    "externalAgentsRefreshing": "Refreshing…",
+    "externalAgentsRefreshFailed": "Failed to refresh connected agent status",
+    "externalAgentsSubmitFailed": "Failed to send work to the connected agent",
+    "externalAgentsUnavailableHint": "This agent is currently unreachable, so delegation is disabled until it comes back online.",
+    "externalAgentsThread": "Thread",
+    "externalAgentsThreadActive": "thread active",
+    "externalAgentsLatestState": "Latest state",
+    "externalAgentsUpdatedAt": "Updated {{time}}",
+    "externalAgentsLatestPrompt": "Latest prompt",
+    "externalAgentsLatestResponse": "Latest response",
+    "externalAgentsAwaitingResponse": "The connected agent accepted the task and is still processing it.",
+    "externalAgentsStartFresh": "Start fresh thread"
   },
   "skills": {
     "title": "Skill classes",
@@ -249,5 +284,50 @@
   },
   "format": {
     "noInstruction": "No instruction captured"
+  },
+  "layout": {
+    "spotlight": "Showcase",
+    "legalPrimary": "© 2026 智方云 Cubecloud.io",
+    "legalSecondary": "Code under MIT. Cubecloud name, logo, and branding reserved. Based on OpenSpace."
+  },
+  "showcase": {
+    "loading": "Loading Showcase…",
+    "unavailable": "Showcase unavailable",
+    "kicker": "Showcase",
+    "title": "OpenSpace AI Agent App Platform",
+    "backToDashboard": "Back to OpenSpace",
+    "appsMetric": "Apps",
+    "liveMetric": "Live",
+    "externalMetric": "Connected agents",
+    "statusLive": "Live",
+    "statusDown": "Unavailable",
+    "appsKicker": "Featured apps",
+    "appsTitle": "My Daily Monitor and app gallery",
+    "appsCountSummary": "{{live}} live · {{total}} apps",
+    "appsEmptyTitle": "No app deployed yet",
+    "appsEmptyDescription": "Add entries in openspace/config/standalone_apps.json to publish more Cubecloud app cards here.",
+    "openApp": "Open app",
+    "appUrl": "Public URL",
+    "appHealth": "Availability",
+    "appLatency": "Latency",
+    "monitorHealthy": "Healthy",
+    "monitorUnhealthy": "Not reachable",
+    "agentsKicker": "Connected agents",
+    "agentsTitle": "IronClaw and connected agents",
+    "agentsChecking": "Checking connected agents…",
+    "agentsCount": "{{count}} declared",
+    "agentsEmptyTitle": "No connected agents declared",
+    "agentsEmptyDescription": "Add entries in openspace/config/external_agents.json to make IronClaw and other connected agents appear here and on the dashboard.",
+    "openAgent": "Open agent"
+  },
+  "nanobot": {
+    "title": "Nanobot Chat",
+    "new_conversation": "New conversation",
+    "placeholder": "Type a message… (Shift+Enter for new line)",
+    "send": "Send",
+    "status": {
+      "waiting": "Nanobot is thinking…",
+      "error": "Something went wrong. Please try again."
+    }
   }
 }
