@@ -101,7 +101,7 @@
     "externalAgentsStartFresh": "Start fresh thread"
   },
   "skills": {
-    "title": "Skill classes",
+    "title": "Skills Gallery",
     "searchPlaceholder": "Search by name, id, description, tag, or origin",
     "sortByScore": "Sort by best score",
     "sortByUpdated": "Sort by updated time",
@@ -154,7 +154,7 @@
     "noLineageGraphDesc": "This skill does not yet have lineage data to visualize."
   },
   "workflows": {
-    "title": "Recorded sessions",
+    "title": "Recorded Sessions",
     "searchPlaceholder": "Search by task name or instruction",
     "workflowSessions": "Workflow Sessions",
     "scannedFrom": "Scanned from logs/recordings and logs/trajectories",
@@ -294,14 +294,14 @@
     "loading": "Loading Showcase…",
     "unavailable": "Showcase unavailable",
     "kicker": "Showcase",
-    "title": "OpenSpace AI Agent App Platform",
+    "title": "Agent Apps Platform",
     "backToDashboard": "Back to OpenSpace",
     "appsMetric": "Apps",
     "liveMetric": "Live",
     "externalMetric": "Connected agents",
     "statusLive": "Live",
     "statusDown": "Unavailable",
-    "appsKicker": "Featured apps",
+    "appsKicker": "Apps Gallery",
     "appsTitle": "My Daily Monitor and app gallery",
     "appsCountSummary": "{{live}} live · {{total}} apps",
     "appsEmptyTitle": "No app deployed yet",
@@ -313,7 +313,7 @@
     "monitorHealthy": "Healthy",
     "monitorUnhealthy": "Not reachable",
     "agentsKicker": "Connected agents",
-    "agentsTitle": "IronClaw and connected agents",
+    "agentsTitle": "Connected agents",
     "agentsChecking": "Checking connected agents…",
     "agentsCount": "{{count}} declared",
     "agentsEmptyTitle": "No connected agents declared",
