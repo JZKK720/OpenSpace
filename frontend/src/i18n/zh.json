@@ -101,7 +101,7 @@
     "externalAgentsStartFresh": "新开线程"
   },
   "skills": {
-    "title": "Skill 类别",
+    "title": "技能仓库",
     "searchPlaceholder": "按名称、ID、描述、标签或来源搜索",
     "sortByScore": "按最佳评分排序",
     "sortByUpdated": "按更新时间排序",
@@ -154,7 +154,7 @@
     "noLineageGraphDesc": "该 Skill 尚无可供可视化的谱系数据。"
   },
   "workflows": {
-    "title": "录制会话",
+    "title": "录制任务",
     "searchPlaceholder": "按任务名称或指令搜索",
     "workflowSessions": "工作流会话",
     "scannedFrom": "从 logs/recordings 和 logs/trajectories 扫描",
@@ -294,14 +294,14 @@
     "loading": "正在加载案例展示…",
     "unavailable": "案例展示不可用",
     "kicker": "案例展示",
-    "title": "OpenSpace AI 智能体应用平台",
+    "title": "智能体应用平台",
     "backToDashboard": "返回 OpenSpace",
     "appsMetric": "应用数",
     "liveMetric": "在线",
     "externalMetric": "已连接智能体",
     "statusLive": "在线",
     "statusDown": "不可用",
-    "appsKicker": "精选应用",
+    "appsKicker": "应用平台",
     "appsTitle": "My Daily Monitor 与应用平台",
     "appsCountSummary": "{{live}} 个在线 · 共 {{total}} 个应用",
     "appsEmptyTitle": "还没有部署应用",
@@ -313,7 +313,7 @@
     "monitorHealthy": "健康",
     "monitorUnhealthy": "当前不可达",
     "agentsKicker": "已连接智能体",
-    "agentsTitle": "IronClaw 与已连接智能体",
+    "agentsTitle": "已连接智能体",
     "agentsChecking": "正在检查已连接智能体…",
     "agentsCount": "已声明 {{count}} 个",
     "agentsEmptyTitle": "还没有声明已连接智能体",
