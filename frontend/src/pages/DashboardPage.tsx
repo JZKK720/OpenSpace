@@ -5,7 +5,7 @@ import { externalAgentsApi, overviewApi, type ExternalAgentStatus, type Overview
 import ExternalAgentCard from '../components/ExternalAgentCard';
 import MetricCard from '../components/MetricCard';
 import EmptyState from '../components/EmptyState';
-import { formatDate, formatInstruction, formatPercent, truncate } from '../utils/format';
+import { formatDate, formatInstruction, formatPercent } from '../utils/format';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -82,17 +82,13 @@ export default function DashboardPage() {
       </section>
 
       <section>
-        <div className="panel-surface p-5 space-y-4">
-          <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.health')}</div>
-            <h2 className="text-2xl font-bold font-serif mt-1">{t('dashboard.runtimeSnapshot')}</h2>
-          </div>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center justify-between"><span className="text-muted">{t('dashboard.status')}</span><span>{data.health.status}</span></div>
-            <div className="flex items-center justify-between"><span className="text-muted">{t('dashboard.dbPath')}</span><span className="text-right break-all">{data.health.db_path}</span></div>
-            <div className="flex items-center justify-between"><span className="text-muted">{t('dashboard.workflowCount')}</span><span>{data.health.workflow_count}</span></div>
-            <div className="flex items-center justify-between"><span className="text-muted">{t('dashboard.builtFrontend')}</span><span>{data.health.frontend_dist_exists ? t('common.yes') : t('common.no')}</span></div>
-          </div>
+        <div className="panel-surface px-4 py-2.5 flex items-center gap-3 text-xs text-muted">
+          <span className="uppercase tracking-[0.14em]">{t('dashboard.health')}</span>
+          <span className="w-px h-3 bg-[color:var(--color-border)] shrink-0" />
+          <span className="font-medium text-ink">{data.health.status}</span>
+          <span>·</span>
+          <span className="truncate">{data.health.db_path}</span>
+          <span className="ml-auto shrink-0">{data.health.workflow_count} {t('dashboard.workflowCount').toLowerCase()}</span>
         </div>
       </section>
 
@@ -109,9 +105,8 @@ export default function DashboardPage() {
               {data.skills.top.map((skill) => (
                 <Link key={skill.skill_id} to={`/skills/${encodeURIComponent(skill.skill_id)}`} className="record-card block p-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 space-y-1">
+                    <div className="min-w-0">
                       <div className="font-bold truncate">{skill.name}</div>
-                      <div className="text-sm text-muted">{truncate(skill.description || t('common.noDescription'), 110)}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-2xl font-bold font-serif">{skill.score.toFixed(1)}</div>
@@ -166,7 +161,6 @@ export default function DashboardPage() {
         <div className="panel-surface p-5 space-y-4">
           <div>
             <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsKicker')}</div>
-            <h2 className="text-2xl font-bold font-serif mt-1">{t('dashboard.externalAgentsTitle')}</h2>
             {!agentsChecking ? (
               <div className="text-xs text-muted mt-1">{t('dashboard.externalAgentsCount', { count: agents.length })}</div>
             ) : null}

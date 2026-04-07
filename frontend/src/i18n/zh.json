@@ -1,6 +1,6 @@
 {
   "nav": {
-    "dashboard": "仪表盘",
+    "dashboard": "智能体开放空间",
     "skills": "Skills",
     "workflows": "工作流",
     "nanobot": "Nanobot"
@@ -34,7 +34,7 @@
     "details": "错误详情"
   },
   "dashboard": {
-    "title": "仪表盘",
+    "title": "智能体开放空间",
     "loadingDashboard": "正在加载仪表盘…",
     "failedToLoad": "加载概览失败",
     "dashboardUnavailable": "仪表盘不可用",
@@ -288,7 +288,7 @@
   "layout": {
     "spotlight": "案例展示",
     "legalPrimary": "© 2026 智方云 Cubecloud.io",
-    "legalSecondary": "代码按 MIT 开放；Cubecloud 名称、Logo 与品牌标识保留权利。基于 OpenSpace 构建。"
+    "legalSecondary": "MIT 许可证 · 基于 OpenSpace"
   },
   "showcase": {
     "loading": "正在加载案例展示…",
