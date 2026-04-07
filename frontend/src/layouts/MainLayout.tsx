@@ -25,9 +25,6 @@ export default function MainLayout() {
             <NavLink to="/showcase" className={linkClass}>
               {t('layout.spotlight')}
             </NavLink>
-            <NavLink to="/nanobot" className={linkClass}>
-              {t('nav.nanobot')}
-            </NavLink>
             <NavLink to="/skills" className={linkClass}>
               {t('nav.skills')}
             </NavLink>
