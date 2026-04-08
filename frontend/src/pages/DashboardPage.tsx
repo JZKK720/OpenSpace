@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { externalAgentsApi, overviewApi, type ExternalAgentStatus, type OverviewResponse } from '../api';
+import { externalAgentsApi, overviewApi, standaloneAppsApi, type ExternalAgentStatus, type OverviewResponse, type StandaloneAppStatus } from '../api';
 import ExternalAgentCard from '../components/ExternalAgentCard';
 import MetricCard from '../components/MetricCard';
 import EmptyState from '../components/EmptyState';
+import SpotlightIcon from '../components/SpotlightIcon';
 import { formatDate, formatInstruction, formatPercent } from '../utils/format';
 
 export default function DashboardPage() {
@@ -14,6 +15,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [agents, setAgents] = useState<ExternalAgentStatus[]>([]);
   const [agentsChecking, setAgentsChecking] = useState(true);
+  const [apps, setApps] = useState<StandaloneAppStatus[]>([]);
+  const [appsChecking, setAppsChecking] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +66,28 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const loadApps = async () => {
+      try {
+        const items = await standaloneAppsApi.getStandaloneApps();
+        if (!cancelled) {
+          setApps(items);
+        }
+      } catch {
+        // non-fatal: apps section shows empty state
+      } finally {
+        if (!cancelled) {
+          setAppsChecking(false);
+        }
+      }
+    };
+    void loadApps();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (loading) {
     return <div className="p-6 text-sm text-muted">{t('dashboard.loadingDashboard')}</div>;
   }
@@ -89,6 +114,79 @@ export default function DashboardPage() {
           <span>·</span>
           <span className="truncate">{data.health.db_path}</span>
           <span className="ml-auto shrink-0">{data.health.workflow_count} {t('dashboard.workflowCount').toLowerCase()}</span>
+        </div>
+      </section>
+
+      <section>
+        <div className="panel-surface p-5 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.agentAppsKicker')}</div>
+              {!appsChecking ? (
+                <div className="text-xs text-muted mt-1">{t('dashboard.agentAppsCount', { count: apps.length })}</div>
+              ) : null}
+            </div>
+            <Link to="/showcase" className="text-xs text-muted hover:text-ink transition-colors">{t('dashboard.agentAppsViewAll')}</Link>
+          </div>
+
+          {appsChecking ? (
+            <div className="text-sm text-muted">{t('dashboard.agentAppsChecking')}</div>
+          ) : apps.length === 0 ? (
+            <EmptyState title={t('dashboard.agentAppsEmptyTitle')} description={t('dashboard.agentAppsEmptyDescription')} />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+              {apps.map((app) => {
+                const isHarness = app.id === 'openharness';
+                const inner = (
+                  <div className={`record-card border border-[color:var(--color-border)] bg-[color:var(--color-bg-page)] p-4 space-y-3 h-full transition-opacity ${app.available ? '' : 'opacity-50'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[color:var(--color-border)] bg-surface ${app.available ? 'text-primary' : 'text-muted'}`}>
+                          <SpotlightIcon icon={app.icon} className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold truncate">{app.name}</div>
+                          {app.tags.length > 0 ? (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {app.tags.slice(0, 3).map((tag) => (
+                                <span key={`${app.id}-${tag}`} className="chip text-xs">{tag}</span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                      <span className={`tag px-2 py-0.5 text-xs shrink-0 ${app.available ? 'text-success' : 'text-muted'}`}>
+                        {app.available ? t('showcase.statusLive') : t('showcase.statusDown')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted line-clamp-2">{app.description}</p>
+                    <div className="flex items-center justify-between gap-2 text-xs text-muted">
+                      {app.latencyMs !== null ? <span>{app.latencyMs}ms</span> : <span />}
+                      {app.available ? (
+                        <span className="font-medium text-primary">{t('dashboard.agentAppsOpen')}</span>
+                      ) : (
+                        <span>{t('showcase.statusDown')}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+
+                if (!app.available) {
+                  return <div key={app.id} className="block h-full cursor-not-allowed">{inner}</div>;
+                }
+
+                return isHarness ? (
+                  <Link key={app.id} to="/harness-agent" className="block h-full">
+                    {inner}
+                  </Link>
+                ) : (
+                  <a key={app.id} href={app.publicUrl} target="_blank" rel="noopener noreferrer" className="block h-full">
+                    {inner}
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

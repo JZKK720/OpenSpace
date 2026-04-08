@@ -3,7 +3,13 @@
     "dashboard": "智能体开放空间",
     "skills": "Skills",
     "workflows": "工作流",
-    "nanobot": "Nanobot"
+    "nanobot": "Nanobot",
+    "harnessAgent": "Harness Agent"
+  },
+  "harnessAgent": {
+    "title": "Harness Agent",
+    "subtitle": "通过 ttyd 提供的交互式 oh REPL",
+    "openInTab": "在新标签页中打开"
   },
   "common": {
     "loading": "加载中…",
@@ -98,7 +104,14 @@
     "externalAgentsLatestPrompt": "最新任务",
     "externalAgentsLatestResponse": "最新响应",
     "externalAgentsAwaitingResponse": "已连接智能体已接受任务，仍在处理中。",
-    "externalAgentsStartFresh": "新开线程"
+    "externalAgentsStartFresh": "新开线程",
+    "agentAppsKicker": "智能应用平台",
+    "agentAppsCount": "已注册 {{count}} 个应用",
+    "agentAppsChecking": "正在检查应用状态…",
+    "agentAppsEmptyTitle": "暂无智能应用",
+    "agentAppsEmptyDescription": "在 openspace/config/standalone_apps.json 中添加条目，即可在此处显示智能应用和工具。",
+    "agentAppsViewAll": "在 Showcase 中查看全部 →",
+    "agentAppsOpen": "打开应用 →"
   },
   "skills": {
     "title": "技能仓库",

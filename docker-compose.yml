@@ -79,6 +79,9 @@ services:
       NANOBOT_INTERNAL_URL: "${NANOBOT_INTERNAL_URL:-http://host.docker.internal:18790/}"
       NANOBOT_HEALTH_URL: "${NANOBOT_HEALTH_URL:-http://host.docker.internal:18790/health}"
       NANOBOT_ACTION_URL: "${NANOBOT_ACTION_URL:-http://host.docker.internal:18790/v1/chat/completions}"
+      OPENHARNESS_PUBLIC_URL: "${OPENHARNESS_PUBLIC_URL:-http://localhost:8780}"
+      OPENHARNESS_INTERNAL_URL: "${OPENHARNESS_INTERNAL_URL:-http://host.docker.internal:8581}"
+      OPENHARNESS_HEALTH_URL: "${OPENHARNESS_HEALTH_URL:-http://host.docker.internal:8581/health}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
@@ -126,6 +129,9 @@ services:
       NANOBOT_INTERNAL_URL: "${NANOBOT_INTERNAL_URL:-http://host.docker.internal:18790/}"
       NANOBOT_HEALTH_URL: "${NANOBOT_HEALTH_URL:-http://host.docker.internal:18790/health}"
       NANOBOT_ACTION_URL: "${NANOBOT_ACTION_URL:-http://host.docker.internal:18790/v1/chat/completions}"
+      OPENHARNESS_PUBLIC_URL: "${OPENHARNESS_PUBLIC_URL:-http://localhost:8780}"
+      OPENHARNESS_INTERNAL_URL: "${OPENHARNESS_INTERNAL_URL:-http://host.docker.internal:8581}"
+      OPENHARNESS_HEALTH_URL: "${OPENHARNESS_HEALTH_URL:-http://host.docker.internal:8581/health}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
@@ -175,6 +181,9 @@ services:
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
+      OPENHARNESS_PUBLIC_URL: "${OPENHARNESS_PUBLIC_URL:-http://localhost:8780}"
+      OPENHARNESS_INTERNAL_URL: "${OPENHARNESS_INTERNAL_URL:-http://host.docker.internal:8581}"
+      OPENHARNESS_HEALTH_URL: "${OPENHARNESS_HEALTH_URL:-http://host.docker.internal:8581/health}"
     volumes:
       - openspace_data:/app/.openspace
       - ./logs:/app/logs

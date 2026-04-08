@@ -11,6 +11,17 @@
       "internal_url_env": "MY_DAILY_MONITOR_INTERNAL_URL",
       "health_url_env": "MY_DAILY_MONITOR_INTERNAL_URL",
       "tags": ["showcase", "monitor", "dashboard"]
+    },
+    {
+      "id": "openharness",
+      "name": "OpenHarness",
+      "description": "Tool-use agent harness with 43 tools, multi-model support via Ollama, and an interactive REPL. Runs workflows, executes shell commands, browses the web, and coordinates sub-agents.",
+      "kind": "harness-tool",
+      "icon": "terminal",
+      "public_url_env": "OPENHARNESS_PUBLIC_URL",
+      "internal_url_env": "OPENHARNESS_INTERNAL_URL",
+      "health_url_env": "OPENHARNESS_HEALTH_URL",
+      "tags": ["agent", "harness", "tools", "ollama", "terminal"]
     }
   ]
 }
