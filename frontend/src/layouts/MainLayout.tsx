@@ -27,6 +27,9 @@ export default function MainLayout() {
             <NavLink to="/workflows" className={linkClass}>
               {t('nav.workflows')}
             </NavLink>
+            <NavLink to="/harness-agent" className={linkClass}>
+              {t('nav.harnessAgent')}
+            </NavLink>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted">

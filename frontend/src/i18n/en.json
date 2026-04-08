@@ -3,7 +3,13 @@
     "dashboard": "OpenSpace",
     "skills": "Skills",
     "workflows": "Workflows",
-    "nanobot": "Nanobot"
+    "nanobot": "Nanobot",
+    "harnessAgent": "Harness Agent"
+  },
+  "harnessAgent": {
+    "title": "Harness Agent",
+    "subtitle": "Interactive oh REPL via ttyd",
+    "openInTab": "Open in new tab"
   },
   "common": {
     "loading": "Loading…",
@@ -98,7 +104,14 @@
     "externalAgentsLatestPrompt": "Latest prompt",
     "externalAgentsLatestResponse": "Latest response",
     "externalAgentsAwaitingResponse": "The connected agent accepted the task and is still processing it.",
-    "externalAgentsStartFresh": "Start fresh thread"
+    "externalAgentsStartFresh": "Start fresh thread",
+    "agentAppsKicker": "Agent Apps Platform",
+    "agentAppsCount": "{{count}} apps registered",
+    "agentAppsChecking": "Checking app status…",
+    "agentAppsEmptyTitle": "No agent apps registered",
+    "agentAppsEmptyDescription": "Add entries in openspace/config/standalone_apps.json to surface agent apps and tools here.",
+    "agentAppsViewAll": "View all in Showcase →",
+    "agentAppsOpen": "Open app →"
   },
   "skills": {
     "title": "Skills Gallery",
