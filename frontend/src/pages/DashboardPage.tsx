@@ -190,6 +190,28 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      <section>
+        <div className="panel-surface p-5 space-y-4">
+          <div>
+            <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsKicker')}</div>
+            {!agentsChecking ? (
+              <div className="text-xs text-muted mt-1">{t('dashboard.externalAgentsCount', { count: agents.length })}</div>
+            ) : null}
+          </div>
+          {agentsChecking ? (
+            <div className="text-sm text-muted">{t('dashboard.externalAgentsChecking')}</div>
+          ) : agents.length === 0 ? (
+            <EmptyState title={t('dashboard.externalAgentsEmptyTitle')} description={t('dashboard.externalAgentsEmptyDescription')} />
+          ) : (
+            <div className="grid grid-cols-2 gap-4 items-start">
+              {agents.map((agent) => (
+                <ExternalAgentCard key={agent.id} agent={agent} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       <section className="grid grid-cols-2 gap-6">
         <div className="panel-surface p-5 space-y-4">
           <div>
@@ -249,28 +271,6 @@ export default function DashboardPage() {
                     <span>{formatDate(workflow.start_time)}</span>
                   </div>
                 </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section>
-        <div className="panel-surface p-5 space-y-4">
-          <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.externalAgentsKicker')}</div>
-            {!agentsChecking ? (
-              <div className="text-xs text-muted mt-1">{t('dashboard.externalAgentsCount', { count: agents.length })}</div>
-            ) : null}
-          </div>
-          {agentsChecking ? (
-            <div className="text-sm text-muted">{t('dashboard.externalAgentsChecking')}</div>
-          ) : agents.length === 0 ? (
-            <EmptyState title={t('dashboard.externalAgentsEmptyTitle')} description={t('dashboard.externalAgentsEmptyDescription')} />
-          ) : (
-            <div className="grid grid-cols-2 gap-4 items-start">
-              {agents.map((agent) => (
-                <ExternalAgentCard key={agent.id} agent={agent} />
               ))}
             </div>
           )}
