@@ -47,6 +47,22 @@
       "action_url_env": "NANOBOT_ACTION_URL",
       "history_url_env": "NANOBOT_ACTION_URL",
       "tags": ["assistant", "delegate", "nanobot"]
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes",
+      "description": "OpenAI-compatible agent gateway. Delegates tasks via /v1/chat/completions.",
+      "kind": "acting-agent",
+      "protocol": "openai-compat",
+      "capabilities": ["handoff"],
+      "handoff_mode": "request_response",
+      "public_url_env": "HERMES_PUBLIC_URL",
+      "internal_url_env": "HERMES_INTERNAL_URL",
+      "health_url_env": "HERMES_HEALTH_URL",
+      "action_url_env": "HERMES_ACTION_URL",
+      "action_auth_token_env": "HERMES_API_KEY",
+      "model": "gemma4:e4b-it-q8_0",
+      "tags": ["assistant", "delegate", "hermes"]
     }
   ]
 }

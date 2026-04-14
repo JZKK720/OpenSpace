@@ -289,6 +289,7 @@ def load_external_agents() -> List[Dict[str, Any]]:
         handoff_mode = str(item.get("handoff_mode") or _resolve_handoff_mode(protocol, capabilities)).strip().lower()
         history_mode = str(item.get("history_mode") or _resolve_history_mode(protocol, capabilities)).strip().lower()
         standalone_app_id = str(item.get("standalone_app_id") or "").strip()
+        model = str(item.get("model") or "").strip()
         mcp_server_name = ""
         if mcp_url:
             mcp_server_name = str(item.get("mcp_server_name") or _build_mcp_server_name(agent_id)).strip()
@@ -308,6 +309,7 @@ def load_external_agents() -> List[Dict[str, Any]]:
                 "linkedMcpServers": linked_mcp_servers,
                 "unresolvedLinkedMcpServerIds": unresolved_linked_mcp_server_ids,
                 "mcpServerName": mcp_server_name,
+                "model": model,
                 "tags": tags,
                 "publicUrl": public_url,
                 "internalUrl": internal_url,

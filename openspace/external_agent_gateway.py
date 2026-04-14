@@ -258,10 +258,90 @@ class NanobotAdapter(ExternalAgentAdapter):
             ) from exc
 
 
+class OpenAICompatAdapter(ExternalAgentAdapter):
+    """Adapter for standard OpenAI-compatible chat completion APIs (/v1/chat/completions)."""
+
+    protocol_ids = ("openai-compat", "openai-compatible")
+
+    def handoff(
+        self,
+        agent: Dict[str, Any],
+        *,
+        prompt: str,
+        thread_id: str | None = None,
+        timezone: str = "UTC",
+        history_limit: int = 10,
+    ) -> Dict[str, Any]:
+        action_url = str(agent.get("actionUrl") or "").strip()
+        if not action_url:
+            raise ExternalAgentGatewayError(
+                f"External agent '{agent.get('id')}' action URL is not configured",
+                status_code=400,
+            )
+
+        model = str(agent.get("model") or agent.get("id") or "default").strip()
+        payload: Dict[str, Any] = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+
+        response = _request_json(
+            action_url,
+            method="POST",
+            payload=payload,
+            auth_token=str(agent.get("_actionAuthToken") or "").strip() or None,
+            headers=_headers(agent.get("_actionHeaders")),
+            timeout=60.0,
+        )
+
+        reply = ""
+        choices = response.get("choices")
+        if isinstance(choices, list) and choices:
+            first = choices[0]
+            if isinstance(first, dict):
+                msg = first.get("message") or {}
+                reply = str(msg.get("content") or "").strip()
+
+        latest_turn = {
+            "turn_number": 1,
+            "user_input": prompt,
+            "response": reply,
+            "state": "completed",
+            "started_at": None,
+            "completed_at": None,
+            "tool_calls": [],
+        }
+
+        return {
+            "agentId": str(agent.get("id") or "hermes"),
+            "threadId": thread_id or "",
+            "threadCreated": False,
+            "messageId": str(response.get("id") or ""),
+            "status": "completed",
+            "actionUrl": action_url,
+            "hasMore": False,
+            "turns": [latest_turn],
+            "latestTurn": latest_turn,
+        }
+
+    def history(
+        self,
+        agent: Dict[str, Any],
+        *,
+        thread_id: str,
+        limit: int = 10,
+    ) -> Dict[str, Any]:
+        raise ExternalAgentGatewayError(
+            f"External agent '{agent.get('id')}' (openai-compat) does not support history retrieval",
+            status_code=400,
+        )
+
+
 _ADAPTERS: List[ExternalAgentAdapter] = [
     ChatThreadAdapter(),
     HttpJsonAdapter(),
     NanobotAdapter(),
+    OpenAICompatAdapter(),
 ]
 
 

@@ -22,8 +22,8 @@ services:
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       FASTMCP_TRANSPORT_SECURITY__ENABLE_DNS_REBINDING_PROTECTION: "false"
-    ports:
-      - "127.0.0.1:${OPENSPACE_REMOTE_AGENT_PORT:-8789}:8080"
+    # No host port binding — accessible only via internal Docker network (openspace-remote-agent:8080).
+    # Port 8789 is reserved for hermes-gateway (OpenAI-compat API that OpenSpace calls).
     volumes:
       - openspace_data:/app/.openspace
       - ./logs:/app/logs
@@ -82,6 +82,11 @@ services:
       OPENHARNESS_PUBLIC_URL: "${OPENHARNESS_PUBLIC_URL:-http://localhost:8780}"
       OPENHARNESS_INTERNAL_URL: "${OPENHARNESS_INTERNAL_URL:-http://host.docker.internal:8581}"
       OPENHARNESS_HEALTH_URL: "${OPENHARNESS_HEALTH_URL:-http://host.docker.internal:8581/health}"
+      HERMES_PUBLIC_URL: "${HERMES_PUBLIC_URL:-http://127.0.0.1:8789/}"
+      HERMES_INTERNAL_URL: "${HERMES_INTERNAL_URL:-http://host.docker.internal:8789/}"
+      HERMES_HEALTH_URL: "${HERMES_HEALTH_URL:-http://host.docker.internal:8789/health}"
+      HERMES_ACTION_URL: "${HERMES_ACTION_URL:-http://host.docker.internal:8789/v1/chat/completions}"
+      HERMES_API_KEY: "${HERMES_API_KEY:-}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
@@ -132,6 +137,11 @@ services:
       OPENHARNESS_PUBLIC_URL: "${OPENHARNESS_PUBLIC_URL:-http://localhost:8780}"
       OPENHARNESS_INTERNAL_URL: "${OPENHARNESS_INTERNAL_URL:-http://host.docker.internal:8581}"
       OPENHARNESS_HEALTH_URL: "${OPENHARNESS_HEALTH_URL:-http://host.docker.internal:8581/health}"
+      HERMES_PUBLIC_URL: "${HERMES_PUBLIC_URL:-http://127.0.0.1:8789/}"
+      HERMES_INTERNAL_URL: "${HERMES_INTERNAL_URL:-http://host.docker.internal:8789/}"
+      HERMES_HEALTH_URL: "${HERMES_HEALTH_URL:-http://host.docker.internal:8789/health}"
+      HERMES_ACTION_URL: "${HERMES_ACTION_URL:-http://host.docker.internal:8789/v1/chat/completions}"
+      HERMES_API_KEY: "${HERMES_API_KEY:-}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
@@ -184,6 +194,11 @@ services:
       OPENHARNESS_PUBLIC_URL: "${OPENHARNESS_PUBLIC_URL:-http://localhost:8780}"
       OPENHARNESS_INTERNAL_URL: "${OPENHARNESS_INTERNAL_URL:-http://host.docker.internal:8581}"
       OPENHARNESS_HEALTH_URL: "${OPENHARNESS_HEALTH_URL:-http://host.docker.internal:8581/health}"
+      HERMES_PUBLIC_URL: "${HERMES_PUBLIC_URL:-http://127.0.0.1:8789/}"
+      HERMES_INTERNAL_URL: "${HERMES_INTERNAL_URL:-http://host.docker.internal:8789/}"
+      HERMES_HEALTH_URL: "${HERMES_HEALTH_URL:-http://host.docker.internal:8789/health}"
+      HERMES_ACTION_URL: "${HERMES_ACTION_URL:-http://host.docker.internal:8789/v1/chat/completions}"
+      HERMES_API_KEY: "${HERMES_API_KEY:-}"
     volumes:
       - openspace_data:/app/.openspace
       - ./logs:/app/logs
