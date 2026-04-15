@@ -25,6 +25,7 @@ Code in this repository remains available under the MIT license in [LICENSE](LIC
 
 ## 📢 News
 
+- **2026-04-15** 🤝 **v0.4.0 — Multi-agent gateway: IronClaw, Nanobot, and Hermes.** Unified external-agent dashboard wires all three delegated runtimes: IronClaw (`chat-thread` bearer-auth protocol), Nanobot (`nanobot-mcp` session-based protocol), and Hermes (`openai-compat` stateless adapter). Agent health probes, thread creation, and task handoff consolidated in a single panel. Smoke test extended with IronClaw chat-thread end-to-end checks. `.env` gains Nanobot and Hermes defaults.
 - **2026-04-09** 💬 Multi-channel **communication gateway**. OpenSpace can now receive and respond to messages from external platforms. Ships with **WhatsApp** (Baileys bridge + QR auth) and **Feishu** (HTTP webhook) adapters, session management, attachment caching, and allowlist-based access control. See [`openspace/config/README.md`](openspace/config/README.md) for setup.
 - **2026-04-07** 🌐 OpenSpace MCP now supports standalone **SSE** and **streamable HTTP** startup, making it easier for remote hosts to connect over HTTP instead of stdio and bypass stdio-bound MCP server timeout bottlenecks. See the [host integration guide](openspace/host_skills/README.md) for setup details.
 - **2026-04-06** 🛠️ Fixed multiple runtime issues across grounding, MCP serving, skill evolution, and persistence, improving execution stability and recovery in long-running workflows.

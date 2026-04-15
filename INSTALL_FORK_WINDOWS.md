@@ -5,7 +5,7 @@ This guide installs or updates a Windows machine to the tagged Cubecloud fork re
 ## Release Pin
 
 - Fork repository: `https://github.com/JZKK720/OpenSpace.git`
-- Stable tag: `cubecloud-2026.03.29`
+- Latest release: `v0.4.0` (multi-agent gateway, IronClaw + Nanobot + Hermes)
 - Tracking branch: `main` (always latest)
 
 ## Prerequisites
@@ -18,7 +18,24 @@ This guide installs or updates a Windows machine to the tagged Cubecloud fork re
 
 All four services are managed by `docker compose`. Use `scripts/docker-up.ps1` for the full workflow.
 
-### First-time install
+### One-shot install script
+
+The fastest way to get running on a fresh machine:
+
+```powershell
+# Download and run the install script directly:
+irm https://raw.githubusercontent.com/JZKK720/OpenSpace/main/scripts/install.ps1 | iex
+```
+
+Or, if you have already cloned the repo:
+
+```powershell
+.\scripts\install.ps1
+```
+
+The script will: clone (or pull) the repo, create `.env` from `.env.example`, prompt for your `IRONCLAW_AUTH_TOKEN`, start the Docker stack, and run smoke verification.
+
+### Manual first-time install
 
 ```powershell
 git clone https://github.com/JZKK720/OpenSpace.git C:\OpenSpace
@@ -91,7 +108,18 @@ IRONCLAW_AUTH_TOKEN=your_token_here
 GATEWAY_AUTH_TOKEN=your_token_here
 ```
 
-If your IronClaw URLs differ from the defaults in `.env.example`, update those at the same time.
+**Nanobot** (session-based, port 18790) and **Hermes** (OpenAI-compat, port 8789) have working defaults in `.env.example`. Override only if your deployments use different hosts or ports:
+
+```dotenv
+# Nanobot — only needed if not running on default port 18790
+NANOBOT_INTERNAL_URL=http://host.docker.internal:18790/
+NANOBOT_ACTION_URL=http://host.docker.internal:18790/v1/chat/completions
+
+# Hermes — only needed if not running on default port 8789
+HERMES_INTERNAL_URL=http://host.docker.internal:8789/
+HERMES_ACTION_URL=http://host.docker.internal:8789/v1/chat/completions
+HERMES_API_KEY=your_key_if_required
+```
 
 ## Verification
 
@@ -165,8 +193,15 @@ Important: this reduces source exposure in the working checkout, but local Docke
 
 ## Updating to a New Tagged Release Later
 
-When you publish a new redistribution tag on your fork, update the script by replacing:
+Just pull the latest `main` branch and re-run docker-up:
 
-- `$ReleaseTag = 'cubecloud-2026.03.29'`
+```powershell
+git pull origin main
+.\scripts\docker-up.ps1
+```
 
-with the new tag name.
+Or use the install script in update mode (it auto-detects an existing clone and pulls):
+
+```powershell
+.\scripts\install.ps1
+```

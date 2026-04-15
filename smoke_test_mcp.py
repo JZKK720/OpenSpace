@@ -2,7 +2,7 @@
 Smoke test for OpenSpace MCP streamable-http integration.
 
 Level 1: Direct MCP protocol (initialize + tools/list + tools/call search_skills)
-Level 2: Via IronClaw extension status check
+Level 2: IronClaw chat-thread integration (health + thread/new + chat/send)
 
 Usage:
     python smoke_test_mcp.py
@@ -15,7 +15,7 @@ import sys
 
 import httpx
 
-MCP_URL = "http://127.0.0.1:8789/mcp"
+MCP_URL = "http://127.0.0.1:8788/mcp"
 IC_URL = "http://127.0.0.1:3231"
 
 MCP_HEADERS = {
@@ -137,29 +137,56 @@ def run_level1():
 
 def run_level2(token: str):
     ok = True
-    print("\n=== Level 2: IronClaw extension status ===")
-    headers = {"Authorization": f"Bearer {token}"}
+    print("\n=== Level 2: IronClaw chat-thread integration ===")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    with httpx.Client(timeout=10) as client:
+    with httpx.Client(timeout=15) as client:
+        # ── IronClaw health ───────────────────────────────────────────────────
+        try:
+            r = client.get(IC_URL)
+            r.raise_for_status()
+            print(f"  {PASS} IronClaw root reachable  status={r.status_code}")
+        except Exception as e:
+            print(f"  {FAIL} IronClaw health failed: {e}")
+            return False
+
+        # ── extensions list (sanity check — new IronClaw uses MCP, not extensions) ──
         try:
             r = client.get(f"{IC_URL}/api/extensions", headers=headers)
             r.raise_for_status()
             exts = r.json().get("extensions", [])
-            openspace = next((e for e in exts if e.get("name") == "openspace"), None)
-            if not openspace:
-                print(f"  {FAIL} openspace extension not found in IronClaw")
-                return False
-            active = openspace.get("active", False)
-            tools = openspace.get("tools", [])
-            url = openspace.get("url", "")
-            status = PASS if active else FAIL
-            print(f"  {status} openspace  active={active}  url={url}")
-            print(f"  {PASS if tools else FAIL} tools  count={len(tools)}")
-            for t in tools:
-                print(f"         • {t}")
+            print(f"  {PASS} /api/extensions reachable  count={len(exts)}")
         except Exception as e:
-            print(f"  {FAIL} IronClaw extensions API failed: {e}")
+            print(f"  {FAIL} /api/extensions failed: {e}")
             ok = False
+
+        # ── create new chat thread ────────────────────────────────────────────
+        thread_id: str | None = None
+        try:
+            r = client.post(f"{IC_URL}/api/chat/thread/new", headers=headers)
+            r.raise_for_status()
+            thread_id = r.json().get("id", None)
+            if not thread_id:
+                print(f"  {FAIL} /api/chat/thread/new returned no id")
+                ok = False
+            else:
+                print(f"  {PASS} /api/chat/thread/new  thread_id={thread_id!r}")
+        except Exception as e:
+            print(f"  {FAIL} /api/chat/thread/new failed: {e}")
+            ok = False
+
+        # ── send a smoke-test message ─────────────────────────────────────────
+        if thread_id:
+            try:
+                payload = {"content": "smoke-test ping", "thread_id": thread_id, "timezone": "UTC"}
+                r = client.post(f"{IC_URL}/api/chat/send", headers=headers, json=payload)
+                r.raise_for_status()
+                msg_id = r.json().get("message_id", r.json().get("id", "?"))
+                status_val = r.json().get("status", "?")
+                print(f"  {PASS} /api/chat/send  message_id={msg_id!r}  status={status_val!r}")
+            except Exception as e:
+                print(f"  {FAIL} /api/chat/send failed: {e}")
+                ok = False
 
     return ok
 
