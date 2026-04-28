@@ -1,0 +1,100 @@
+name: GHCR Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      owner_lc: ${{ steps.vars.outputs.owner_lc }}
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+    steps:
+      - name: Derive image metadata inputs
+        id: vars
+        shell: bash
+        run: |
+          echo "owner_lc=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image_name: openspace-runtime
+            dockerfile: Dockerfile.runtime
+          - image_name: openspace-agents-monitor
+            dockerfile: Dockerfile.agents-monitor
+          - image_name: openspace-cubecloud-dashboard
+            dockerfile: Dockerfile.dashboard
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ needs.prepare.outputs.owner_lc }}/${{ matrix.image_name }}
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=sha-${{ needs.prepare.outputs.short_sha }}
+            type=ref,event=tag
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    needs:
+      - prepare
+      - publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            GHCR rollout release for the Cubecloud fork.
+
+            Published images:
+            - ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-runtime:${{ github.ref_name }}
+            - ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-agents-monitor:${{ github.ref_name }}
+            - ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-cubecloud-dashboard:${{ github.ref_name }}
+
+            The `main` channel is also refreshed on pushes to `origin/main`.

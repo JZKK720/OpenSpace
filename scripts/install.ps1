@@ -17,7 +17,9 @@
     -InstallPath    Where to clone the repo.  Default: C:\OpenSpace
     -Branch         Branch to track.          Default: main
     -SkipDocker     Set up files only; skip docker compose up.
-    -Fresh          Pass -Fresh to docker-up (full no-cache rebuild).
+    -LocalBuild     Use local Docker builds instead of GHCR release images.
+    -ImageTag       Pin the GHCR release tag to pull, e.g. v0.5.0.
+    -Fresh          Pass -Fresh to docker-up (full no-cache rebuild, requires -LocalBuild).
     -Down           Pass -Down to docker-up  (wipe containers first).
 
 .PARAMETER InstallPath
@@ -29,26 +31,34 @@
 .PARAMETER SkipDocker
     Only clone/configure files; do not start the Docker stack.
 
+.PARAMETER LocalBuild
+    Use the checked-in Dockerfiles and local compose file instead of GHCR images.
+
+.PARAMETER ImageTag
+    Persist OPENSPACE_IMAGE_TAG in .env before starting the stack.
+
 .PARAMETER Fresh
-    Force a full no-cache Docker image rebuild.
+    Force a full no-cache Docker image rebuild. Requires -LocalBuild.
 
 .PARAMETER Down
     Stop and remove containers before rebuilding.
 
 .EXAMPLE
-    # Minimal fresh install (will prompt for tokens):
+    # Minimal GHCR-based install (will prompt for tokens):
     .\scripts\install.ps1
 
-    # Install to a custom path, no-cache rebuild:
-    .\scripts\install.ps1 -InstallPath D:\cubecloud -Fresh
+    # Install to a custom path and pin a tagged release:
+    .\scripts\install.ps1 -InstallPath D:\cubecloud -ImageTag v0.5.0
 
-    # Files only (configure .env manually, then run docker-up.ps1 separately):
-    .\scripts\install.ps1 -SkipDocker
+    # Local-build fallback (rebuild images from source):
+    .\scripts\install.ps1 -LocalBuild -Fresh
 #>
 param(
     [string]$InstallPath = 'C:\OpenSpace',
     [string]$Branch      = 'main',
     [switch]$SkipDocker,
+    [switch]$LocalBuild,
+    [string]$ImageTag = '',
     [switch]$Fresh,
     [switch]$Down
 )
@@ -76,6 +86,11 @@ function Write-Warn($msg) { Write-Host "  WARN $msg" -ForegroundColor Yellow }
 Write-Step "Pre-flight checks"
 Check-Command git
 Check-Command docker
+
+if ($Fresh -and -not $LocalBuild) {
+    Write-Error '[install] -Fresh requires -LocalBuild. The default install path pulls GHCR images.'
+    exit 1
+}
 
 # Verify Docker daemon is running
 try {
@@ -139,6 +154,16 @@ if (-not (Test-Path '.env')) {
     Write-OK ".env already exists — keeping existing values."
 }
 
+if ($ImageTag) {
+    Set-EnvValue 'OPENSPACE_IMAGE_TAG' $ImageTag
+    Write-OK "OPENSPACE_IMAGE_TAG pinned to $ImageTag."
+} else {
+    $currentImageTag = Get-EnvValue 'OPENSPACE_IMAGE_TAG'
+    if ($currentImageTag) {
+        Write-OK "OPENSPACE_IMAGE_TAG: $currentImageTag"
+    }
+}
+
 # Helper: read current value from .env
 function Get-EnvValue($key) {
     $line = Select-String -Path '.env' -Pattern "^$key=" | Select-Object -First 1
@@ -195,12 +220,22 @@ if (-not $hermesKey) {
 # ─────────────────────────────────────────────────────────────────────────────
 if ($SkipDocker) {
     Write-Step "Skipping Docker stack (-SkipDocker specified)."
-    Write-Host "`n  When ready, run:  .\scripts\docker-up.ps1" -ForegroundColor Cyan
+    if ($LocalBuild) {
+        Write-Host "`n  When ready, run:  .\scripts\docker-up.ps1 -LocalBuild" -ForegroundColor Cyan
+    } else {
+        Write-Host "`n  When ready, run:  .\scripts\docker-up.ps1" -ForegroundColor Cyan
+    }
 } else {
-    Write-Step "Starting Docker stack ..."
+    if ($LocalBuild) {
+        Write-Step "Starting Docker stack from local images ..."
+    } else {
+        Write-Step "Starting Docker stack from GHCR images ..."
+    }
     $dockerArgs = @()
+    if ($LocalBuild) { $dockerArgs += '-LocalBuild' }
     if ($Fresh) { $dockerArgs += '-Fresh' }
     if ($Down)  { $dockerArgs += '-Down' }
+    if ($ImageTag) { $dockerArgs += @('-ImageTag', $ImageTag) }
 
     & "$RepoRoot\scripts\docker-up.ps1" @dockerArgs
 

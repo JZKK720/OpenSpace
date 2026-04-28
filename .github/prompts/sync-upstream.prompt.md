@@ -1,35 +1,73 @@
 ---
-description: "Sync the Cubecloud fork with upstream HKUDS/OpenSpace — fetch, rebase our 5 Cubecloud commits onto upstream/main, resolve conflicts, run tests, and push."
+description: "Review the current checkout against fork/main and then review the Cubecloud fork against upstream HKUDS/OpenSpace, decide whether the fork should update now, draft a cherry-pick or rebase plan, produce a local build and validation plan, and optionally execute the sync after confirmation."
 name: "Sync with Upstream"
 argument-hint: "Optional: target upstream commit or tag to sync to (default: upstream/main tip)"
 agent: agent
 tools: [execute, read, edit, search, todo]
 ---
-Use the **Upstream Sync** agent (@sync-upstream) to perform a full upstream sync for this repository.
+Use the **Upstream Sync** agent (@sync-upstream) to compare this fork against upstream before any history-changing action.
 
 ## Parameters
 
-- **Target** (optional): `${input:target:upstream/main tip}` — specific upstream commit SHA or tag to sync to, e.g. `2fb8024` or `upstream/main`.
+- **Target** (optional): `${input:target:upstream/main}` — specific upstream commit SHA, tag, or ref to compare against.
+
+## Default Behavior
+
+- Start in review-only mode.
+- Fetch `upstream` and `origin`, then report:
+  - local-only commits and remote-only commits relative to `origin/main`, so the user can see whether the checkout already drifted from the fork baseline used by Cubecloud builds
+  - upstream-only commits relative to `main`
+  - fork-only commits and all `cubecloud-*` tags that must be preserved
+  - the recommended sync strategy: `no update`, cherry-pick selected upstream commits, or rebase the fork onto the target
+  - likely conflict hotspots, config or API drift that must be checked, whether Docker/build changes should also trigger a GHCR release plan, and a layer-by-layer local build and validation plan
+- Do not rebase, cherry-pick, retag, or push until the user explicitly asks for execution.
+
+## Recommendation Rules
+
+- Recommend `no update yet` when the upstream delta is docs-only, low value for this fork, or concentrated in fork-only product surfaces without a matching bugfix or security reason.
+- Recommend `cherry-pick` when the upstream delta is small, high-value, and isolated away from the main divergence hotspots.
+- Recommend `rebase` when the user wants a refreshed upstream baseline, the replay set is broad, or security and dependency fixes touch multiple shared layers.
+- Escalate instead of guessing when both sides changed `openspace/config/external_agents.json`, `openspace/config/standalone_apps.json`, `docker-compose.yml`, dashboard handoff code, or branding-sensitive frontend text in the same slice.
 
 ## Context
 
 This is the **Cubecloud fork** (`JZKK720/OpenSpace`) of `HKUDS/OpenSpace`.
 
 Key facts the agent must know:
-- We have **5 Cubecloud commits** on top of the fork base that must be preserved and re-tagged after rebase
+- This fork is intentionally diverged for Cubecloud dashboard, showcase, and Windows and local-runtime support
+- `origin/main` is the deployment baseline for Cubecloud builds, so review local drift against it before drawing upstream conclusions
 - Push target is **`origin`** only — never `upstream`
 - Force-push must use `--force-with-lease`
 - The litellm `<1.82.7` pin from upstream is a **security fix** (PYSEC-2026-2) and must be preserved in `pyproject.toml` and `requirements.txt` after conflict resolution
-- After rebase, re-apply `cubecloud-2026.03.29` and `cubecloud-2026.03.29.1` tags to their corresponding rebased commits
+- Preserve all `cubecloud-*` tags if history changes
+- Discover current fork-only commits dynamically; do not assume a fixed commit count
+- When docs disagree with checked-in manifests or scripts, trust `pyproject.toml`, `frontend/package.json`, `showcase/my-daily-monitor/package.json`, `docker-compose.yml`, and `scripts/*.ps1`
 
-## Steps to Execute
+## Validation Plan
 
-1. Run pre-flight checks (clean working tree, remotes present)
-2. Fetch `upstream` and `origin`
-3. Show the user what upstream commits will be brought in and what Cubecloud commits will be replayed — **wait for confirmation**
-4. Run `git rebase ${input:target:upstream/main}` and resolve all conflicts using the resolution rules in the agent definition
-5. Run `python -m pytest tests/ -x -q` and `openspace-mcp --help` as smoke tests
-6. Re-apply Cubecloud tags to the rebased commits
-7. Push `main` and tags to `origin` with `--force-with-lease` — **wait for confirmation before pushing**
+The report must include the relevant commands for the touched surfaces:
 
-Report final status clearly: commits rebased, conflicts resolved, tests passed/failed, tags applied, push status.
+- Python and CLI: `pip install -e ".[windows]"`, `openspace-mcp --help`
+- Python checks when relevant: `pytest`, `black openspace/`, `flake8 openspace/`, `mypy openspace/`
+- Config integrity: `python -m json.tool openspace/config/external_agents.json`, `python -m json.tool openspace/config/standalone_apps.json`
+- Security drift: confirm `litellm<1.82.7` remains present in both `pyproject.toml` and `requirements.txt`
+- Dashboard frontend: `Set-Location frontend; npm install; npm run build`
+- Showcase app: `Set-Location showcase/my-daily-monitor; npm install; npm run build`
+- Docker: `docker compose config` and, if needed, `docker compose up -d --build`
+- Dashboard API when the stack is running: `Invoke-WebRequest http://127.0.0.1:7788/api/v1/health -UseBasicParsing`, `Invoke-WebRequest http://127.0.0.1:7788/api/v1/external-agents -UseBasicParsing`, `Invoke-WebRequest http://127.0.0.1:7788/api/v1/standalone-apps -UseBasicParsing`
+- Smoke: `python smoke_test_mcp.py --level 1`, plus level 2 only when required secrets are available
+
+## Execution Mode
+
+If the user approves actual sync work, continue with confirmation gates for:
+
+1. clean working tree checks before any write operation
+2. fetch and compare
+3. cherry-pick or rebase execution
+4. conflict resolution and validation
+5. `cubecloud-*` tag remapping if history changed
+6. push to `origin` only, using `--force-with-lease` when required
+
+If the safest recommendation is `no update`, stop after the report and explain what would need to change before a sync becomes worthwhile.
+
+Report final status clearly: divergence summary, recommended sync path, conflict risks, validation plan, and execution status if any changes were made.

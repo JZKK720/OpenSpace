@@ -25,6 +25,7 @@ Code in this repository remains available under the MIT license in [LICENSE](LIC
 
 ## 📢 News
 
+- **2026-04-28** 📦 **v0.5.0 — GHCR rollout and pull-first updates.** The Cubecloud fork now publishes `openspace-runtime`, `openspace-agents-monitor`, and `openspace-cubecloud-dashboard` images to GHCR from `origin/main` and tagged releases. `scripts/docker-up.ps1` and `scripts/install.ps1` now default to pull-first upgrades, while `-LocalBuild` remains the explicit developer fallback.
 - **2026-04-15** 🤝 **v0.4.0 — Multi-agent gateway: IronClaw, Nanobot, and Hermes.** Unified external-agent dashboard wires all three delegated runtimes: IronClaw (`chat-thread` bearer-auth protocol), Nanobot (`nanobot-mcp` session-based protocol), and Hermes (`openai-compat` stateless adapter). Agent health probes, thread creation, and task handoff consolidated in a single panel. Smoke test extended with IronClaw chat-thread end-to-end checks. `.env` gains Nanobot and Hermes defaults.
 - **2026-04-09** 💬 Multi-channel **communication gateway**. OpenSpace can now receive and respond to messages from external platforms. Ships with **WhatsApp** (Baileys bridge + QR auth) and **Feishu** (HTTP webhook) adapters, session management, attachment caching, and allowlist-based access control. See [`openspace/config/README.md`](openspace/config/README.md) for setup.
 - **2026-04-07** 🌐 OpenSpace MCP now supports standalone **SSE** and **streamable HTTP** startup, making it easier for remote hosts to connect over HTTP instead of stdio and bypass stdio-bound MCP server timeout bottlenecks. See the [host integration guide](openspace/host_skills/README.md) for setup details.
@@ -293,7 +294,7 @@ npm run dev
 
 **Docker Compose stack**
 
-The Compose stack runs all four services in containers — the recommended deployment for any machine. Use `scripts/docker-up.ps1` (Windows/PowerShell) or the equivalent `docker compose` commands directly.
+The Compose stack runs all four services in containers. The recommended deployment path is now the pull-first GHCR flow in `docker-compose.release.yml`; the checked-in `docker-compose.yml` remains the explicit local-build fallback for contributors and recovery work. Use `scripts/docker-up.ps1` (Windows/PowerShell) or the equivalent `docker compose` commands directly.
 
 #### First-time install
 
@@ -304,29 +305,36 @@ Copy-Item .env.example .env        # then edit — see Required .env Values belo
 .\scripts\docker-up.ps1
 ```
 
-#### Routine update (pull + rebuild + restart)
+#### Routine update (pull + image pull + restart)
 
 ```powershell
 .\scripts\docker-up.ps1
 # or manually:
 git pull origin main
-docker compose build
-docker compose up -d --remove-orphans
+docker compose -f docker-compose.release.yml pull
+docker compose -f docker-compose.release.yml up -d --remove-orphans
 ```
 
-#### Force full rebuild (after base-image or dependency changes)
+#### Pin a tagged rollout release
 
 ```powershell
-.\scripts\docker-up.ps1 -Fresh
+.\scripts\docker-up.ps1 -ImageTag v0.5.0
+# or set OPENSPACE_IMAGE_TAG=v0.5.0 in .env before updating
+```
+
+#### Local-build fallback (after Dockerfile or dependency changes)
+
+```powershell
+.\scripts\docker-up.ps1 -LocalBuild -Fresh
 # or manually:
 docker compose build --no-cache
 docker compose up -d --remove-orphans
 ```
 
-#### Wipe containers then rebuild clean
+#### Wipe containers then rebuild clean from source
 
 ```powershell
-.\scripts\docker-up.ps1 -Down -Fresh
+.\scripts\docker-up.ps1 -LocalBuild -Down -Fresh
 # or manually:
 docker compose down -v
 docker compose build --no-cache
@@ -337,16 +345,16 @@ docker compose up -d
 
 ```powershell
 .\scripts\docker-up.ps1 -Status
-docker compose ps
-docker compose logs -f                        # all services
-docker compose logs -f cubecloud-dashboard    # one service
+docker compose -f docker-compose.release.yml ps
+docker compose -f docker-compose.release.yml logs -f                     # all services
+docker compose -f docker-compose.release.yml logs -f cubecloud-dashboard # one service
 ```
 
 #### Stop / teardown
 
 ```powershell
-docker compose down       # stop containers, keep volumes
-docker compose down -v    # also remove anonymous volumes
+docker compose -f docker-compose.release.yml down       # stop containers, keep volumes
+docker compose -f docker-compose.release.yml down -v    # also remove anonymous volumes
 ```
 
 #### Service URLs after stack is up
@@ -367,13 +375,22 @@ GATEWAY_AUTH_TOKEN=your_token_here
 
 All other values have defaults in `.env.example`. Override IronClaw URLs if your deployment differs.
 
+For pull-first releases, `.env.example` also defines:
+
+```dotenv
+OPENSPACE_IMAGE_REGISTRY=ghcr.io/jzkk720
+OPENSPACE_IMAGE_TAG=main
+```
+
+Leave `OPENSPACE_IMAGE_TAG=main` to track the rolling fork build, or set it to a tagged release such as `v0.5.0` to pin a rollout.
+
 #### Verify the stack
 
 ```powershell
 Invoke-WebRequest http://127.0.0.1:7788/api/v1/health -UseBasicParsing
 Invoke-RestMethod http://127.0.0.1:7788/api/v1/external-agents
 Invoke-RestMethod http://127.0.0.1:7788/api/v1/standalone-apps
-docker compose ps
+docker compose -f docker-compose.release.yml ps
 ```
 
 Expected: external agent `ironclaw`, standalone app `my-daily-monitor`.

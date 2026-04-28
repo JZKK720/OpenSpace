@@ -1,9 +1,20 @@
 param(
     [string]$BundleDir = "",
-    [switch]$CopyState
+    [switch]$CopyState,
+    [string]$ImageTag = ''
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Set-EnvValue($path, $key, $value) {
+    $content = Get-Content $path -Raw
+    if ($content -match "(?m)^$key=") {
+        $content = $content -replace "(?m)^$key=.*", "$key=$value"
+    } else {
+        $content = $content.TrimEnd() + "`n$key=$value`n"
+    }
+    Set-Content $path $content -NoNewline
+}
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
@@ -36,6 +47,13 @@ if (Test-Path $rootEnvExample) {
 $rootEnv = Join-Path $RepoRoot '.env'
 if (Test-Path $rootEnv) {
     Copy-Item $rootEnv (Join-Path $BundleDir '.env') -Force
+} elseif (Test-Path $rootEnvExample) {
+    Copy-Item $rootEnvExample (Join-Path $BundleDir '.env') -Force
+}
+
+$bundleEnv = Join-Path $BundleDir '.env'
+if ($ImageTag -and (Test-Path $bundleEnv)) {
+    Set-EnvValue $bundleEnv 'OPENSPACE_IMAGE_TAG' $ImageTag
 }
 
 Copy-Item (Join-Path $RepoRoot 'openspace\config\external_agents.json') (Join-Path $bundleConfigDir 'external_agents.json') -Force
@@ -61,6 +79,10 @@ if (Test-Path (Join-Path $BundleDir '.env')) {
 }
 else {
     Write-Host 'No root .env found. Copy or create one in the runtime bundle before starting containers.'
+}
+
+if ($ImageTag -and (Test-Path $bundleEnv)) {
+    Write-Host "Pinned OPENSPACE_IMAGE_TAG in the runtime bundle to: $ImageTag"
 }
 
 if ($CopyState) {

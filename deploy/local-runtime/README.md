@@ -1,6 +1,6 @@
-# Minimal Local Runtime Bundle
+# Minimal Runtime Bundle
 
-This deployment bundle is for running the already-built local Docker images without keeping the full source checkout in the same folder.
+This deployment bundle is for running the published Cubecloud GHCR images without keeping the full source checkout in the same folder.
 
 ## Purpose
 
@@ -14,13 +14,13 @@ Use this when you want to reduce the amount of source code sitting in your worki
 
 ## What This Bundle Assumes
 
-This bundle expects these local Docker images to already exist on the machine:
+This bundle expects the machine to be able to pull these published images from GHCR:
 
-- `cubecloud-dashboard:local`
-- `agents-monitor:local`
-- `openspace-runtime:local`
+- `ghcr.io/jzkk720/openspace-cubecloud-dashboard:<tag>`
+- `ghcr.io/jzkk720/openspace-agents-monitor:<tag>`
+- `ghcr.io/jzkk720/openspace-runtime:<tag>`
 
-It does not rebuild images. It runs them.
+By default the bundle uses `OPENSPACE_IMAGE_TAG=main`. Set `OPENSPACE_IMAGE_TAG=v0.5.0` in `.env` after that release tag is published if you want a pinned rollout.
 
 ## Important Security Limit
 
@@ -36,8 +36,8 @@ If the machine itself is not trusted, use a stronger boundary such as:
 
 ## Recommended Workflow
 
-1. Rebuild the local images from the source checkout when needed.
-2. Export a runtime bundle with `scripts/prepare_runtime_bundle.ps1`.
+1. Export a runtime bundle with `scripts/prepare_runtime_bundle.ps1`.
+2. Optionally pin `OPENSPACE_IMAGE_TAG` in the bundle `.env` or pass `-ImageTag` to the export script.
 3. Run the bundle from a separate folder.
 4. Archive or remove the full source checkout if you no longer want it on that machine.
 
@@ -46,6 +46,7 @@ If the machine itself is not trusted, use a stronger boundary such as:
 After exporting the bundle, go to the runtime folder and run:
 
 ```powershell
+docker compose pull
 docker compose up -d
 ```
 
@@ -53,9 +54,11 @@ docker compose up -d
 
 After code or config changes in the main repo:
 
-1. rebuild the local images
-2. rerun `scripts/prepare_runtime_bundle.ps1`
+1. rerun `scripts/prepare_runtime_bundle.ps1`
+2. pull the published images in the bundle folder
 3. restart the runtime bundle with `docker compose up -d`
+
+If you want to freeze a machine on a release tag, set `OPENSPACE_IMAGE_TAG` in the bundle `.env` before running the pull.
 
 ## Required Runtime Files
 
