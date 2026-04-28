@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.runtime
-    image: openspace-runtime:local
+    image: "${OPENSPACE_IMAGE_REGISTRY:-ghcr.io/jzkk720}/openspace-runtime:${OPENSPACE_IMAGE_TAG:-main}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
@@ -47,7 +47,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.runtime
-    image: openspace-runtime:local
+    image: "${OPENSPACE_IMAGE_REGISTRY:-ghcr.io/jzkk720}/openspace-runtime:${OPENSPACE_IMAGE_TAG:-main}"
     depends_on:
       openspace-remote-agent:
         condition: service_healthy
@@ -115,7 +115,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.agents-monitor
-    image: agents-monitor:local
+    image: "${OPENSPACE_IMAGE_REGISTRY:-ghcr.io/jzkk720}/openspace-agents-monitor:${OPENSPACE_IMAGE_TAG:-main}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -163,7 +163,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dashboard
-    image: cubecloud-dashboard:local
+    image: "${OPENSPACE_IMAGE_REGISTRY:-ghcr.io/jzkk720}/openspace-cubecloud-dashboard:${OPENSPACE_IMAGE_TAG:-main}"
     depends_on:
       agents-monitor:
         condition: service_healthy
