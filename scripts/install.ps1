@@ -18,7 +18,7 @@
     -Branch         Branch to track.          Default: main
     -SkipDocker     Set up files only; skip docker compose up.
     -LocalBuild     Use local Docker builds instead of GHCR release images.
-    -ImageTag       Pin the GHCR release tag to pull, e.g. v0.5.0.
+    -ImageTag       Pin the GHCR release tag to pull, e.g. v0.6.0.
     -Fresh          Pass -Fresh to docker-up (full no-cache rebuild, requires -LocalBuild).
     -Down           Pass -Down to docker-up  (wipe containers first).
 
@@ -48,7 +48,7 @@
     .\scripts\install.ps1
 
     # Install to a custom path and pin a tagged release:
-    .\scripts\install.ps1 -InstallPath D:\cubecloud -ImageTag v0.5.0
+    .\scripts\install.ps1 -InstallPath D:\cubecloud -ImageTag v0.6.0
 
     # Local-build fallback (rebuild images from source):
     .\scripts\install.ps1 -LocalBuild -Fresh
@@ -199,12 +199,26 @@ if (-not $ironToken) {
     Write-OK "IRONCLAW_AUTH_TOKEN already set."
 }
 
-# Optional: Nanobot URL (only prompt if user wants to override)
-$nanobotUrl = Get-EnvValue 'NANOBOT_INTERNAL_URL'
-if (-not $nanobotUrl) {
-    Write-Warn "NANOBOT_INTERNAL_URL not found in .env — Nanobot defaults will be used (port 18790)."
+# Optional: OpenClaw URL/token
+$openclawUrl = Get-EnvValue 'OPENCLAW_INTERNAL_URL'
+if (-not $openclawUrl) {
+    Write-Warn "OPENCLAW_INTERNAL_URL not found in .env — OpenClaw defaults will be used (port 18788)."
 } else {
-    Write-OK "NANOBOT_INTERNAL_URL: $nanobotUrl"
+    Write-OK "OPENCLAW_INTERNAL_URL: $openclawUrl"
+}
+
+$openclawToken = Get-EnvValue 'OPENCLAW_AUTH_TOKEN'
+if (-not $openclawToken) {
+    Write-Warn "OPENCLAW_AUTH_TOKEN is blank — OpenClaw handoff will not work until it is set."
+} else {
+    Write-OK "OPENCLAW_AUTH_TOKEN set."
+}
+
+$openclawOllamaBaseUrl = Get-EnvValue 'OPENCLAW_OLLAMA_BASE_URL'
+if (-not $openclawOllamaBaseUrl) {
+    Write-Warn "OPENCLAW_OLLAMA_BASE_URL is blank — OpenClaw will keep its own provider baseUrl. Set this if host.docker.internal:11434 is unreliable from the OpenClaw container."
+} else {
+    Write-OK "OPENCLAW_OLLAMA_BASE_URL: $openclawOllamaBaseUrl"
 }
 
 # Optional: Hermes API key

@@ -92,6 +92,10 @@ def _is_chat_thread_protocol(protocol: str) -> bool:
     return protocol in {"chat-thread", "threaded-chat"}
 
 
+def _is_thread_history_protocol(protocol: str) -> bool:
+    return _is_chat_thread_protocol(protocol) or protocol == "openclaw-gateway"
+
+
 def _build_mcp_server_name(agent_id: str) -> str:
     safe = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "-" for ch in agent_id.lower())
     return f"external-{safe}"
@@ -114,7 +118,7 @@ def _normalize_capabilities(
                 capabilities.append(value)
 
     if not capabilities:
-        if _is_chat_thread_protocol(protocol):
+        if _is_thread_history_protocol(protocol):
             capabilities.extend(["handoff", "history"])
         elif protocol in {"mcp", "model-context-protocol"}:
             capabilities.append("mcp")
@@ -123,7 +127,7 @@ def _normalize_capabilities(
 
     if action_url and "handoff" not in capabilities:
         capabilities.append("handoff")
-    if _is_chat_thread_protocol(protocol) and action_url and "history" not in capabilities:
+    if _is_thread_history_protocol(protocol) and action_url and "history" not in capabilities:
         capabilities.append("history")
     elif history_url and "history" not in capabilities:
         capabilities.append("history")
@@ -132,9 +136,9 @@ def _normalize_capabilities(
 
     if not action_url:
         capabilities = [capability for capability in capabilities if capability != "handoff"]
-    if _is_chat_thread_protocol(protocol) and not action_url:
+    if _is_thread_history_protocol(protocol) and not action_url:
         capabilities = [capability for capability in capabilities if capability != "history"]
-    if not _is_chat_thread_protocol(protocol) and not history_url:
+    if not _is_thread_history_protocol(protocol) and not history_url:
         capabilities = [capability for capability in capabilities if capability != "history"]
     if not mcp_url:
         capabilities = [capability for capability in capabilities if capability != "mcp"]
@@ -164,7 +168,7 @@ def _resolve_handoff_mode(protocol: str, capabilities: List[str]) -> str:
 def _resolve_history_mode(protocol: str, capabilities: List[str]) -> str:
     if "history" not in capabilities:
         return "none"
-    if _is_chat_thread_protocol(protocol):
+    if _is_thread_history_protocol(protocol):
         return "thread_history"
     return "poll"
 

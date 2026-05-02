@@ -1,5 +1,5 @@
 ---
-description: "Plan or implement a GHCR-based image workflow for the Cubecloud fork: review the current checkout against origin/main, inspect Docker and install surfaces, compare upstream build changes when needed, propose ghcr.io image names and tags, and optionally scaffold pull-first release automation after confirmation."
+description: "Plan or implement a GHCR-based image workflow for the Cubecloud fork: review the current checkout against origin/main, check whether GHCR main or tagged images are behind the fork baseline, inspect Docker and install surfaces, compare upstream build changes when needed, propose ghcr.io image names and tags, and optionally scaffold pull-first release automation after confirmation."
 name: "Plan GHCR Release"
 argument-hint: "Optional: release scope, target tag, or specific services to publish"
 agent: agent
@@ -18,6 +18,7 @@ Use the **GHCR Release** agent (@ghcr-release) when the goal is to stop rebuildi
 - Review the current checkout against `origin/main` first, then inspect upstream build-related changes only if they affect packaging, dependency safety, or Docker release decisions.
 - Report:
   - local drift from the fork deployment baseline
+  - whether the published `main` or requested release-tag images can be shown to lag behind that fork baseline, or whether registry metadata is unavailable
   - the current Docker, Compose, bundle, and install surfaces that still require local builds
   - a concrete GHCR image naming and tag plan
   - the repo changes needed to let clients pull images instead of rebuilding them locally

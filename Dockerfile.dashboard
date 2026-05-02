@@ -1,4 +1,7 @@
-FROM node:20-bookworm-slim AS frontend-builder
+ARG NODE_BASE_IMAGE=ghcr.io/jzkk720/openspace-base-node:main
+ARG PYTHON_BASE_IMAGE=ghcr.io/jzkk720/openspace-base-python:main
+
+FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /build/frontend
 
@@ -11,7 +14,7 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
 
-FROM python:3.12-slim AS runtime
+FROM ${PYTHON_BASE_IMAGE} AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

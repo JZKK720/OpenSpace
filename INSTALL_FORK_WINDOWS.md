@@ -6,7 +6,7 @@ This guide installs or updates a Windows machine to the tagged Cubecloud fork re
 
 - Fork repository: `https://github.com/JZKK720/OpenSpace.git`
 - Rolling GHCR channel: `main`
-- GHCR rollout release tag: `v0.5.0` (publish this tag from `origin/main` to cut the first pinned pull-first release)
+- GHCR rollout release tag: `v0.6.0` (publish this tag from `origin/main` to cut the next pinned pull-first release)
 - Tracking branch: `main` (always latest fork baseline)
 
 ## Prerequisites
@@ -54,9 +54,9 @@ Copy-Item .env.example .env        # then edit IRONCLAW_AUTH_TOKEN etc.
 ### Pin a tagged release instead of the rolling `main` channel
 
 ```powershell
-.\scripts\install.ps1 -ImageTag v0.5.0
+.\scripts\install.ps1 -ImageTag v0.6.0
 # or later:
-.\scripts\docker-up.ps1 -ImageTag v0.5.0
+.\scripts\docker-up.ps1 -ImageTag v0.6.0
 ```
 
 ### Local-build fallback (base-image or dependency change)
@@ -117,12 +117,17 @@ IRONCLAW_AUTH_TOKEN=your_token_here
 GATEWAY_AUTH_TOKEN=your_token_here
 ```
 
-**Nanobot** (session-based, port 18790) and **Hermes** (OpenAI-compat, port 8789) have working defaults in `.env.example`. Override only if your deployments use different hosts or ports:
+**OpenClaw** (OpenAI-compatible gateway, port 18788) and **Hermes** (OpenAI-compat, port 8789) have working defaults in `.env.example`. Override only if your deployments use different hosts or ports:
 
 ```dotenv
-# Nanobot — only needed if not running on default port 18790
-NANOBOT_INTERNAL_URL=http://host.docker.internal:18790/
-NANOBOT_ACTION_URL=http://host.docker.internal:18790/v1/chat/completions
+# OpenClaw — only needed if not running on default port 18788 or if you need to set the gateway token
+OPENCLAW_INTERNAL_URL=http://host.docker.internal:18788/
+OPENCLAW_ACTION_URL=http://host.docker.internal:18788/v1/chat/completions
+OPENCLAW_AUTH_TOKEN=your_openclaw_gateway_token
+
+# Optional: if OpenClaw itself uses host Ollama and host.docker.internal is flaky,
+# docker-up.ps1 will write this into /home/node/.openclaw/openclaw.json and restart the gateway.
+OPENCLAW_OLLAMA_BASE_URL=http://192.168.65.254:11434
 
 # Hermes — only needed if not running on default port 8789
 HERMES_INTERNAL_URL=http://host.docker.internal:8789/
@@ -137,7 +142,7 @@ OPENSPACE_IMAGE_REGISTRY=ghcr.io/jzkk720
 OPENSPACE_IMAGE_TAG=main
 ```
 
-Set `OPENSPACE_IMAGE_TAG=v0.5.0` after the tag is published if you want to pin this machine to the GHCR rollout release instead of the rolling `main` channel.
+Set `OPENSPACE_IMAGE_TAG=v0.6.0` after the tag is published if you want to pin this machine to the GHCR rollout release instead of the rolling `main` channel.
 
 ## Verification
 
@@ -152,7 +157,7 @@ docker compose -f docker-compose.release.yml ps
 
 Expected dashboard registry results:
 
-- external agent: `ironclaw`
+- external agents: `ironclaw`, `openclaw`, `hermes`
 - standalone app: `my-daily-monitor`
 
 ## Optional: Local Non-Docker Build
@@ -221,7 +226,7 @@ git pull origin main
 To pin a published release tag from `origin/main`, set `OPENSPACE_IMAGE_TAG` in `.env` or pass `-ImageTag`:
 
 ```powershell
-.\scripts\docker-up.ps1 -ImageTag v0.5.0
+.\scripts\docker-up.ps1 -ImageTag v0.6.0
 ```
 
 Or use the install script in update mode (it auto-detects an existing clone and pulls):

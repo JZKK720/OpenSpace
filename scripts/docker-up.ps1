@@ -4,6 +4,8 @@
 
 .DESCRIPTION
     Run from any directory.  Handles first-time setup and incremental updates.
+    If OPENCLAW_OLLAMA_BASE_URL is set in .env, also sync that value into the
+    live OpenClaw gateway config before finishing.
 
     Modes
     ------
@@ -38,7 +40,7 @@
     .\scripts\docker-up.ps1
 
     # Pin a tagged rollout release from GHCR:
-    .\scripts\docker-up.ps1 -ImageTag v0.5.0
+    .\scripts\docker-up.ps1 -ImageTag v0.6.0
 
     # Force full rebuild from local Dockerfiles:
     .\scripts\docker-up.ps1 -LocalBuild -Fresh
@@ -96,6 +98,60 @@ function Set-EnvValue($key, $value) {
         $content = $content.TrimEnd() + "`n$key=$value`n"
     }
     Set-Content '.env' $content -NoNewline
+}
+
+function Sync-OpenClawOllamaBaseUrl() {
+    $baseUrl = Get-EnvValue 'OPENCLAW_OLLAMA_BASE_URL'
+    if (-not $baseUrl) {
+        return
+    }
+
+    $containerName = docker ps --filter "name=^/openclaw-openclaw-gateway-1$" --format "{{.Names}}" | Select-Object -First 1
+    if (-not $containerName) {
+        Write-Warning '[docker-up] OPENCLAW_OLLAMA_BASE_URL is set, but openclaw-openclaw-gateway-1 is not running. Skipping OpenClaw provider sync.'
+        return
+    }
+
+    $script = @'
+const fs = require("fs");
+const path = "/home/node/.openclaw/openclaw.json";
+const nextBaseUrl = process.env.OPENCLAW_OLLAMA_BASE_URL;
+if (!nextBaseUrl) {
+  console.log("missing");
+  process.exit(0);
+}
+
+const data = JSON.parse(fs.readFileSync(path, "utf8"));
+data.models ??= {};
+data.models.providers ??= {};
+data.models.providers.ollama ??= {};
+
+const currentBaseUrl = data.models.providers.ollama.baseUrl || "";
+if (currentBaseUrl === nextBaseUrl) {
+  console.log(`unchanged:${currentBaseUrl}`);
+  process.exit(0);
+}
+
+data.models.providers.ollama.baseUrl = nextBaseUrl;
+fs.writeFileSync(path, JSON.stringify(data, null, 2));
+console.log(`updated:${currentBaseUrl}->${nextBaseUrl}`);
+'@
+
+    $result = docker exec -e OPENCLAW_OLLAMA_BASE_URL=$baseUrl $containerName node -e $script 2>&1
+    if (-not $?) {
+        Write-Warning "[docker-up] Failed to sync OpenClaw provider URL: $result"
+        return
+    }
+
+    $resultText = [string]::Join("`n", $result)
+    if ($resultText -match '^updated:') {
+        Write-Host "[docker-up] Updated OpenClaw provider base URL to '$baseUrl'. Restarting openclaw-openclaw-gateway-1 ..."
+        docker restart $containerName | Out-Null
+    } elseif ($resultText -match '^unchanged:') {
+        Write-Host "[docker-up] OpenClaw provider base URL already matches '$baseUrl'."
+    } else {
+        Write-Host "[docker-up] OpenClaw provider sync result: $resultText"
+    }
 }
 
 # ── Status only ───────────────────────────────────────────────────────────────
@@ -179,6 +235,8 @@ if (-not $?) {
     Write-Error '[docker-up] docker compose up failed. See output above.'
     exit 1
 }
+
+Sync-OpenClawOllamaBaseUrl
 
 Write-Host ''
 Write-Host '[docker-up] Stack is up. Service URLs:'

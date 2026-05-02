@@ -25,8 +25,9 @@ Code in this repository remains available under the MIT license in [LICENSE](LIC
 
 ## 📢 News
 
+- **2026-05-02** 📦 **v0.6.0 — OpenClaw threading and GHCR-aligned local builds.** The Cubecloud fork now ships the OpenClaw threaded replay adapter, mirrors Docker base images into GHCR for tag-aligned local rebuilds, and keeps `OPENSPACE_IMAGE_TAG` consistent across pull-first and `-LocalBuild` workflows.
 - **2026-04-28** 📦 **v0.5.0 — GHCR rollout and pull-first updates.** The Cubecloud fork now publishes `openspace-runtime`, `openspace-agents-monitor`, and `openspace-cubecloud-dashboard` images to GHCR from `origin/main` and tagged releases. `scripts/docker-up.ps1` and `scripts/install.ps1` now default to pull-first upgrades, while `-LocalBuild` remains the explicit developer fallback.
-- **2026-04-15** 🤝 **v0.4.0 — Multi-agent gateway: IronClaw, Nanobot, and Hermes.** Unified external-agent dashboard wires all three delegated runtimes: IronClaw (`chat-thread` bearer-auth protocol), Nanobot (`nanobot-mcp` session-based protocol), and Hermes (`openai-compat` stateless adapter). Agent health probes, thread creation, and task handoff consolidated in a single panel. Smoke test extended with IronClaw chat-thread end-to-end checks. `.env` gains Nanobot and Hermes defaults.
+- **2026-04-15** 🤝 **v0.4.0 — Multi-agent gateway: IronClaw, OpenClaw, and Hermes.** Unified external-agent dashboard wires all three delegated runtimes: IronClaw (`chat-thread` bearer-auth protocol), OpenClaw (`openclaw-gateway` adapter that replays thread messages over `/v1/chat/completions`), and Hermes (`openai-compat` stateless adapter). Agent health probes, task handoff, and threaded dashboard history consolidated in a single panel. Smoke test extended with IronClaw chat-thread and OpenClaw adapter checks. `.env` gains OpenClaw and Hermes defaults.
 - **2026-04-09** 💬 Multi-channel **communication gateway**. OpenSpace can now receive and respond to messages from external platforms. Ships with **WhatsApp** (Baileys bridge + QR auth) and **Feishu** (HTTP webhook) adapters, session management, attachment caching, and allowlist-based access control. See [`openspace/config/README.md`](openspace/config/README.md) for setup.
 - **2026-04-07** 🌐 OpenSpace MCP now supports standalone **SSE** and **streamable HTTP** startup, making it easier for remote hosts to connect over HTTP instead of stdio and bypass stdio-bound MCP server timeout bottlenecks. See the [host integration guide](openspace/host_skills/README.md) for setup details.
 - **2026-04-06** 🛠️ Fixed multiple runtime issues across grounding, MCP serving, skill evolution, and persistence, improving execution stability and recovery in long-running workflows.
@@ -318,8 +319,8 @@ docker compose -f docker-compose.release.yml up -d --remove-orphans
 #### Pin a tagged rollout release
 
 ```powershell
-.\scripts\docker-up.ps1 -ImageTag v0.5.0
-# or set OPENSPACE_IMAGE_TAG=v0.5.0 in .env before updating
+.\scripts\docker-up.ps1 -ImageTag v0.6.0
+# or set OPENSPACE_IMAGE_TAG=v0.6.0 in .env before updating
 ```
 
 #### Local-build fallback (after Dockerfile or dependency changes)
@@ -382,7 +383,7 @@ OPENSPACE_IMAGE_REGISTRY=ghcr.io/jzkk720
 OPENSPACE_IMAGE_TAG=main
 ```
 
-Leave `OPENSPACE_IMAGE_TAG=main` to track the rolling fork build, or set it to a tagged release such as `v0.5.0` to pin a rollout.
+Leave `OPENSPACE_IMAGE_TAG=main` to track the rolling fork build, or set it to a tagged release such as `v0.6.0` to pin a rollout.
 
 #### Verify the stack
 
@@ -393,12 +394,12 @@ Invoke-RestMethod http://127.0.0.1:7788/api/v1/standalone-apps
 docker compose -f docker-compose.release.yml ps
 ```
 
-Expected: external agent `ironclaw`, standalone app `my-daily-monitor`.
+Expected: external agents `ironclaw`, `openclaw`, `hermes`; standalone app `my-daily-monitor`.
 
 > [!NOTE]
 > **Windows full guide:** [INSTALL_FORK_WINDOWS.md](INSTALL_FORK_WINDOWS.md) covers the local non-Docker build path and minimal runtime bundle options.
 
-**External agent registry and IronClaw**
+**External agent registry**
 
 Both web surfaces now read the shared registry at `openspace/config/external_agents.json`.
 
@@ -429,6 +430,10 @@ On the live runtime connected in this session, IronClaw delegates through its be
 OpenSpace now proxies that flow at `POST /api/v1/external-agents/ironclaw/handoff` and polls thread state through `GET /api/v1/external-agents/ironclaw/history?thread_id=...`.
 
 When you run the dashboard in Docker, set `IRONCLAW_AUTH_TOKEN` to the same value as IronClaw's `GATEWAY_AUTH_TOKEN` so the dashboard container can create threads and submit work.
+
+The same registry also ships `OpenClaw` and `Hermes` defaults. `OpenClaw` stays on `/v1/chat/completions`, but the dedicated `openclaw-gateway` adapter keeps thread continuity on the OpenSpace side by replaying prior turns into each request and mirroring completed history for dashboard refreshes. `Hermes` remains a stateless `openai-compat` handoff target.
+
+If your OpenClaw gateway runs in Docker and uses host Ollama, you can also set `OPENCLAW_OLLAMA_BASE_URL` in `.env`. The Windows entry points in `scripts/docker-up.ps1` and `scripts/install.ps1` will push that value into `/home/node/.openclaw/openclaw.json` for the live `openclaw-openclaw-gateway-1` container and restart the gateway when the value changes.
 
 OpenSpace now separates:
 - external agents that accept delegated work, such as IronClaw

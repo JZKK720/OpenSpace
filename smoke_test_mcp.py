@@ -3,10 +3,12 @@ Smoke test for OpenSpace MCP streamable-http integration.
 
 Level 1: Direct MCP protocol (initialize + tools/list + tools/call search_skills)
 Level 2: IronClaw chat-thread integration (health + thread/new + chat/send)
+Level 3: OpenClaw gateway integration (/health + /v1/chat/completions + OpenSpace adapter history)
 
 Usage:
     python smoke_test_mcp.py
     python smoke_test_mcp.py --level 2 --ironclaw-token <token>
+    python smoke_test_mcp.py --level 3 --ironclaw-token <token> --openclaw-token <token>
 """
 
 import argparse
@@ -15,8 +17,11 @@ import sys
 
 import httpx
 
+from openspace.external_agent_gateway import get_external_agent_history, handoff_external_agent
+
 MCP_URL = "http://127.0.0.1:8788/mcp"
 IC_URL = "http://127.0.0.1:3231"
+OC_URL = "http://127.0.0.1:18788"
 
 MCP_HEADERS = {
     "Content-Type": "application/json",
@@ -191,10 +196,91 @@ def run_level2(token: str):
     return ok
 
 
+def run_level3(token: str):
+    ok = True
+    print("\n=== Level 3: OpenClaw gateway integration ===")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    with httpx.Client(timeout=120) as client:
+        try:
+            r = client.get(f"{OC_URL}/health")
+            r.raise_for_status()
+            print(f"  {PASS} OpenClaw health reachable  status={r.status_code}")
+        except Exception as e:
+            print(f"  {FAIL} OpenClaw health failed: {e}")
+            return False
+
+        try:
+            payload = {
+                "model": "openclaw/default",
+                "messages": [{"role": "user", "content": "Reply with exactly: pong"}],
+            }
+            r = client.post(f"{OC_URL}/v1/chat/completions", headers=headers, json=payload)
+            r.raise_for_status()
+            body = r.json()
+            reply = (
+                body.get("choices", [{}])[0]
+                .get("message", {})
+                .get("content", "")
+                .strip()
+            )
+            if reply != "pong":
+                print(f"  {FAIL} /v1/chat/completions returned unexpected reply: {reply!r}")
+                ok = False
+            else:
+                print(f"  {PASS} /v1/chat/completions  reply={reply!r}")
+        except Exception as e:
+            print(f"  {FAIL} /v1/chat/completions failed: {e}")
+            ok = False
+
+        try:
+            agent = {
+                "id": "openclaw",
+                "protocol": "openclaw-gateway",
+                "capabilities": ["handoff", "history"],
+                "actionUrl": f"{OC_URL}/v1/chat/completions",
+                "_actionAuthToken": token,
+                "model": "openclaw/default",
+            }
+            result = handoff_external_agent(
+                agent,
+                prompt="Reply with exactly: pong",
+            )
+            thread_id = str(result.get("threadId") or "")
+            latest_turn = result.get("latestTurn") or {}
+            mirrored_reply = str(latest_turn.get("response") or "").strip()
+            if not thread_id:
+                print("  {FAIL} OpenSpace adapter handoff returned no thread id")
+                ok = False
+            elif mirrored_reply != "pong":
+                print(f"  {FAIL} OpenSpace adapter handoff returned unexpected reply: {mirrored_reply!r}")
+                ok = False
+            else:
+                print(f"  {PASS} openclaw-gateway handoff  thread_id={thread_id!r}  reply={mirrored_reply!r}")
+
+            history = get_external_agent_history(agent, thread_id=thread_id, limit=5)
+            history_turns = history.get("turns") or []
+            history_reply = str((history.get("latestTurn") or {}).get("response") or "").strip()
+            if not history_turns:
+                print("  {FAIL} openclaw-gateway history returned no turns")
+                ok = False
+            elif history_reply != "pong":
+                print(f"  {FAIL} openclaw-gateway history returned unexpected reply: {history_reply!r}")
+                ok = False
+            else:
+                print(f"  {PASS} openclaw-gateway history  turns={len(history_turns)}  latest={history_reply!r}")
+        except Exception as e:
+            print(f"  {FAIL} OpenSpace OpenClaw adapter failed: {e}")
+            ok = False
+
+    return ok
+
+
 def main():
     parser = argparse.ArgumentParser(description="OpenSpace MCP smoke test")
-    parser.add_argument("--level", type=int, choices=[1, 2], default=1)
+    parser.add_argument("--level", type=int, choices=[1, 2, 3], default=1)
     parser.add_argument("--ironclaw-token", default=None, help="IronClaw auth token for level 2")
+    parser.add_argument("--openclaw-token", default=None, help="OpenClaw auth token for level 3")
     args = parser.parse_args()
 
     passed = True
@@ -204,6 +290,11 @@ def main():
             print("\n[!] Pass --ironclaw-token for level 2")
         else:
             passed = run_level2(args.ironclaw_token) and passed
+    if args.level >= 3:
+        if not args.openclaw_token:
+            print("\n[!] Pass --openclaw-token for level 3")
+        else:
+            passed = run_level3(args.openclaw_token) and passed
 
     print()
     if passed:

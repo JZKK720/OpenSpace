@@ -1,5 +1,5 @@
 ---
-description: "Use when planning or implementing a GHCR-based image workflow for the Cubecloud fork: review HEAD vs origin/main, inspect Docker and install surfaces, compare upstream build changes when needed, propose ghcr.io image names and tags, convert rebuild-first Compose flows to pull-first upgrades, and optionally scaffold the release automation after confirmation."
+description: "Use when planning or implementing a GHCR-based image workflow for the Cubecloud fork: review HEAD vs origin/main, check whether GHCR main or tagged images are behind the fork baseline, inspect Docker and install surfaces, compare upstream build changes when needed, propose ghcr.io image names and tags, convert rebuild-first Compose flows to pull-first upgrades, and optionally scaffold the release automation after confirmation."
 name: "GHCR Release"
 tools: [execute, read, edit, search, todo]
 argument-hint: "Describe the release goal, e.g. 'plan GHCR rollout for all services' or 'scaffold publish workflow for runtime and dashboard images'"
@@ -39,8 +39,11 @@ git diff --name-only origin/main...upstream/main -- docker-compose.yml deploy/lo
 Start by reporting:
 
 - current local drift from `origin/main`
+- whether the current fork baseline should have produced newer `main` or release-tag images than the user is currently relying on
 - the Docker and release surfaces that currently enforce local builds
 - any upstream changes that matter to Docker packaging, dependency safety, or runtime images
+
+If GitHub package metadata or registry access is available, inspect the latest published tags for the configured image namespace. If it is not available, say so explicitly and limit the conclusion to what can be inferred from `origin/main`, `.github/workflows/ghcr-release.yml`, and the repo's tag policy.
 
 ### 2. Registry Plan
 

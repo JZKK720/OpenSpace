@@ -6,14 +6,14 @@
 
 | 🔋 **Token 用量减少 46%** | **💰 6 小时赚取 $11K** | 🧬 **Skill 自我进化** | 🌐 **Agent 经验共享** |
 
-[![Agents](https://img.shields.io/badge/Agents-Claude_Code%20%7C%20Codex%20%7C%20OpenClaw%20%7C%20nanobot%20%7C%20...-99C9BF.svg)](https://modelcontextprotocol.io/)
+[![Agents](https://img.shields.io/badge/Agents-Claude_Code%20%7C%20Codex%20%7C%20OpenClaw%20%7C%20Hermes%20%7C%20...-99C9BF.svg)](https://modelcontextprotocol.io/)
 [![Python](https://img.shields.io/badge/Python-3.12+-FCE7D6.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-FFF4D6.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-C1E5F5.svg)](https://opensource.org/licenses/MIT/)
 [![Feishu](https://img.shields.io/badge/Feishu-Group-E9DBFC?style=flat&logo=larksuite&logoColor=white)](./COMMUNICATION.md)
 [![WeChat](https://img.shields.io/badge/WeChat-Group-C5EAB4?style=flat&logo=wechat&logoColor=white)](./COMMUNICATION.md)
 
-**一条命令，进化你所有的 AI Agent**：OpenClaw、nanobot、Claude Code、Codex、Cursor 等
+**一条命令，进化你所有的 AI Agent**：OpenClaw、Hermes、Claude Code、Codex、Cursor 等
 
 本仓库中的代码仍按 [LICENSE](LICENSE) 中的 MIT 协议开放。Cubecloud 品牌、logo 与 `cubecloud.io` 的相关权利由 [TRADEMARKS.zh-CN.md](TRADEMARKS.zh-CN.md) 保留，明确品牌资产见 [BRAND_ASSETS.zh-CN.md](BRAND_ASSETS.zh-CN.md)。如与英文原文存在冲突，以 [TRADEMARKS.md](TRADEMARKS.md)、[BRAND_ASSETS.md](BRAND_ASSETS.md) 与 [CONTRIBUTING.md](CONTRIBUTING.md) 为准。
 

@@ -1,5 +1,5 @@
 ---
-description: "Review the current checkout against fork/main and then review the Cubecloud fork against upstream HKUDS/OpenSpace, decide whether the fork should update now, draft a cherry-pick or rebase plan, produce a local build and validation plan, and optionally execute the sync after confirmation."
+description: "Review whether the current checkout is behind fork/main, whether the Cubecloud fork is behind upstream HKUDS/OpenSpace, decide whether the fork should update now, draft a cherry-pick or rebase plan, produce a local build and validation plan, and optionally execute the sync after confirmation."
 name: "Sync with Upstream"
 argument-hint: "Optional: target upstream commit or tag to sync to (default: upstream/main tip)"
 agent: agent
@@ -21,6 +21,7 @@ Use the **Upstream Sync** agent (@sync-upstream) to compare this fork against up
   - the recommended sync strategy: `no update`, cherry-pick selected upstream commits, or rebase the fork onto the target
   - likely conflict hotspots, config or API drift that must be checked, whether Docker/build changes should also trigger a GHCR release plan, and a layer-by-layer local build and validation plan
 - Do not rebase, cherry-pick, retag, or push until the user explicitly asks for execution.
+- If the user also asks whether published GHCR images are behind the fork baseline, finish the git divergence report first and then hand the registry portion to the [Plan GHCR Release](./ghcr-release.prompt.md) workflow instead of guessing from git state alone.
 
 ## Recommendation Rules
 
