@@ -37,6 +37,10 @@ def _resolve_value(item: Dict[str, Any], key: str) -> str:
     return str(item.get(key) or "").strip()
 
 
+def _resolve_env_name(item: Dict[str, Any], key: str) -> str:
+    return str(item.get(f"{key}_env") or "").strip()
+
+
 def _resolve_headers(item: Dict[str, Any], key: str) -> Dict[str, str]:
     env_key = str(item.get(f"{key}_env") or "").strip()
     if env_key:
@@ -86,6 +90,30 @@ def _resolve_string_list(raw: Any) -> List[str]:
             values.append(value)
             seen.add(value)
     return values
+
+
+def _has_authorization_header(headers: Any) -> bool:
+    if not isinstance(headers, dict):
+        return False
+    for key, value in headers.items():
+        if str(key).strip().lower() == "authorization" and str(value or "").strip():
+            return True
+    return False
+
+
+def _missing_auth_configuration_message(
+    *,
+    token: Any,
+    headers: Any,
+    env_name: str,
+    purpose: str,
+) -> str | None:
+    if str(token or "").strip() or _has_authorization_header(headers):
+        return None
+    cleaned_env_name = str(env_name or "").strip()
+    if not cleaned_env_name:
+        return None
+    return f"Missing required {purpose} auth token env '{cleaned_env_name}'"
 
 
 def _is_chat_thread_protocol(protocol: str) -> bool:
@@ -257,6 +285,9 @@ def load_external_agents() -> List[Dict[str, Any]]:
         action_auth_token = _resolve_value(item, "action_auth_token")
         history_auth_token = _resolve_value(item, "history_auth_token") or action_auth_token
         mcp_auth_token = _resolve_value(item, "mcp_auth_token")
+        action_auth_token_env = _resolve_env_name(item, "action_auth_token")
+        history_auth_token_env = _resolve_env_name(item, "history_auth_token") or action_auth_token_env
+        mcp_auth_token_env = _resolve_env_name(item, "mcp_auth_token")
         action_headers = _resolve_headers(item, "action_headers")
         history_headers = _resolve_headers(item, "history_headers") or action_headers
         mcp_headers = _resolve_headers(item, "mcp_headers")
@@ -329,6 +360,9 @@ def load_external_agents() -> List[Dict[str, Any]]:
                 "_actionAuthToken": action_auth_token,
                 "_historyAuthToken": history_auth_token,
                 "_mcpAuthToken": mcp_auth_token,
+                "_actionAuthTokenEnv": action_auth_token_env,
+                "_historyAuthTokenEnv": history_auth_token_env,
+                "_mcpAuthTokenEnv": mcp_auth_token_env,
                 "_actionHeaders": action_headers,
                 "_historyHeaders": history_headers,
                 "_mcpHeaders": mcp_headers,
@@ -347,14 +381,56 @@ def get_external_agents_status(timeout: float = 1.5) -> List[Dict[str, Any]]:
     for agent in load_external_agents():
         probe_url = agent.get("healthUrl") or agent.get("internalUrl") or agent.get("publicUrl")
         probe = _probe_url(str(probe_url or ""), timeout=timeout)
+        config_errors: List[str] = []
+        reported_auth_envs: set[str] = set()
+
+        def record_config_error(message: str | None, env_name: str) -> None:
+            cleaned_env_name = str(env_name or "").strip()
+            if not message:
+                return
+            if cleaned_env_name and cleaned_env_name in reported_auth_envs:
+                return
+            config_errors.append(message)
+            if cleaned_env_name:
+                reported_auth_envs.add(cleaned_env_name)
+
+        if agent.get("supportsHandoff"):
+            handoff_env_name = str(agent.get("_actionAuthTokenEnv") or "")
+            handoff_error = _missing_auth_configuration_message(
+                token=agent.get("_actionAuthToken"),
+                headers=agent.get("_actionHeaders"),
+                env_name=handoff_env_name,
+                purpose="handoff",
+            )
+            record_config_error(handoff_error, handoff_env_name)
+        if agent.get("supportsHistory"):
+            history_env_name = str(agent.get("_historyAuthTokenEnv") or "")
+            history_error = _missing_auth_configuration_message(
+                token=agent.get("_historyAuthToken"),
+                headers=agent.get("_historyHeaders"),
+                env_name=history_env_name,
+                purpose="history",
+            )
+            record_config_error(history_error, history_env_name)
+        if agent.get("supportsMcp"):
+            mcp_env_name = str(agent.get("_mcpAuthTokenEnv") or "")
+            mcp_error = _missing_auth_configuration_message(
+                token=agent.get("_mcpAuthToken"),
+                headers=agent.get("_mcpHeaders"),
+                env_name=mcp_env_name,
+                purpose="mcp",
+            )
+            record_config_error(mcp_error, mcp_env_name)
+
+        available = bool(probe["available"]) and not config_errors
         statuses.append(
             {
                 **_public_agent_payload(agent),
-                "available": probe["available"],
-                "status": "up" if probe["available"] else "down",
+                "available": available,
+                "status": "up" if available else "down",
                 "statusCode": probe["statusCode"],
                 "latencyMs": probe["latencyMs"],
-                "error": probe["error"],
+                "error": "; ".join(config_errors) if config_errors else probe["error"],
             }
         )
     return statuses

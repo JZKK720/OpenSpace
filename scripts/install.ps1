@@ -18,7 +18,7 @@
     -Branch         Branch to track.          Default: main
     -SkipDocker     Set up files only; skip docker compose up.
     -LocalBuild     Use local Docker builds instead of GHCR release images.
-    -ImageTag       Pin the GHCR release tag to pull, e.g. v0.6.0.
+    -ImageTag       Pin the GHCR release tag to pull, e.g. v0.6.1.
     -Fresh          Pass -Fresh to docker-up (full no-cache rebuild, requires -LocalBuild).
     -Down           Pass -Down to docker-up  (wipe containers first).
 
@@ -48,7 +48,7 @@
     .\scripts\install.ps1
 
     # Install to a custom path and pin a tagged release:
-    .\scripts\install.ps1 -InstallPath D:\cubecloud -ImageTag v0.6.0
+    .\scripts\install.ps1 -InstallPath D:\cubecloud -ImageTag v0.6.1
 
     # Local-build fallback (rebuild images from source):
     .\scripts\install.ps1 -LocalBuild -Fresh
@@ -224,7 +224,7 @@ if (-not $openclawOllamaBaseUrl) {
 # Optional: Hermes API key
 $hermesKey = Get-EnvValue 'HERMES_API_KEY'
 if (-not $hermesKey) {
-    Write-Warn "HERMES_API_KEY is blank — Hermes agent will be available without API key (local-only mode)."
+    Write-Warn "HERMES_API_KEY is blank — Hermes handoff may return 401 until it is set if your gateway requires auth."
 } else {
     Write-OK "HERMES_API_KEY set."
 }
@@ -272,10 +272,103 @@ if ($SkipDocker) {
         }
     }
 
+    function Invoke-JsonRequest {
+        param(
+            [string]$Method = 'GET',
+            [Parameter(Mandatory)]
+            [string]$Uri,
+            [hashtable]$Headers = @{},
+            [object]$Body = $null,
+            [int]$TimeoutSec = 30
+        )
+
+        Add-Type -AssemblyName System.Net.Http
+        $client = [System.Net.Http.HttpClient]::new()
+        $client.Timeout = [TimeSpan]::FromSeconds($TimeoutSec)
+        $request = $null
+
+        try {
+            $request = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::new($Method), $Uri)
+
+            foreach ($key in $Headers.Keys) {
+                [void]$request.Headers.TryAddWithoutValidation($key, [string]$Headers[$key])
+            }
+
+            if ($null -ne $Body) {
+                $jsonBody = if ($Body -is [string]) { [string]$Body } else { $Body | ConvertTo-Json -Depth 10 -Compress }
+                $request.Content = [System.Net.Http.StringContent]::new($jsonBody, [System.Text.Encoding]::UTF8, 'application/json')
+            }
+
+            $response = $client.SendAsync($request).GetAwaiter().GetResult()
+            $content = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+
+            return [PSCustomObject]@{
+                StatusCode = [int]$response.StatusCode
+                IsSuccessStatusCode = $response.IsSuccessStatusCode
+                Content = $content
+            }
+        } finally {
+            if ($request) {
+                $request.Dispose()
+            }
+            $client.Dispose()
+        }
+    }
+
+    function Test-HandoffProbe($label, $agentId, $prompt, $timeoutSec = 90) {
+        try {
+            $response = Invoke-JsonRequest -Method 'POST' -Uri "http://127.0.0.1:7788/api/v1/external-agents/$agentId/handoff" -Body @{ prompt = $prompt } -TimeoutSec $timeoutSec
+            if (-not $response.IsSuccessStatusCode) {
+                $details = if ($response.Content) { $response.Content } else { '<no body>' }
+                Write-Warn "$label  HTTP $($response.StatusCode) — $details"
+                $script:fail++
+                return
+            }
+
+            $payload = $null
+            if ($response.Content) {
+                try {
+                    $payload = $response.Content | ConvertFrom-Json
+                } catch {
+                    $payload = $null
+                }
+            }
+
+            $statusText = if ($payload -and $payload.status) { [string]$payload.status } else { 'ok' }
+            $threadSuffix = if ($payload -and $payload.threadId) { "  threadId=$($payload.threadId)" } else { '' }
+            $replySuffix = ''
+            if ($payload -and $payload.latestTurn -and $payload.latestTurn.response) {
+                $replyText = [string]$payload.latestTurn.response
+                if ($replyText.Length -gt 40) {
+                    $replyText = $replyText.Substring(0, 40) + '...'
+                }
+                $replySuffix = "  reply=$replyText"
+            }
+
+            Write-OK "$label  HTTP $($response.StatusCode)  status=$statusText$threadSuffix$replySuffix"
+            $script:pass++
+        } catch {
+            Write-Warn "$label  FAILED — $_"
+            $script:fail++
+        }
+    }
+
     Test-Endpoint "Dashboard health"         "http://127.0.0.1:7788/api/v1/health"
     Test-Endpoint "External agents registry" "http://127.0.0.1:7788/api/v1/external-agents"
     Test-Endpoint "Standalone apps registry" "http://127.0.0.1:7788/api/v1/standalone-apps"
     Test-Endpoint "Runtime MCP"              "http://127.0.0.1:8788/mcp"
+
+    if ($ironToken) {
+        Test-HandoffProbe "IronClaw handoff" "ironclaw" "Reply with exactly pong" 45
+    } else {
+        Write-Warn "IronClaw handoff probe skipped — IRONCLAW_AUTH_TOKEN is blank."
+    }
+
+    if ($hermesKey) {
+        Test-HandoffProbe "Hermes handoff" "hermes" "Reply with exactly pong" 90
+    } else {
+        Write-Warn "Hermes handoff probe skipped — HERMES_API_KEY is blank."
+    }
 
     Write-Host ""
     if ($fail -eq 0) {

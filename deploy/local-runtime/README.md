@@ -20,7 +20,7 @@ This bundle expects the machine to be able to pull these published images from G
 - `ghcr.io/jzkk720/openspace-agents-monitor:<tag>`
 - `ghcr.io/jzkk720/openspace-runtime:<tag>`
 
-By default the bundle uses `OPENSPACE_IMAGE_TAG=main`. Set `OPENSPACE_IMAGE_TAG=v0.6.0` in `.env` after that release tag is published if you want a pinned rollout.
+By default the bundle uses `OPENSPACE_IMAGE_TAG=main`. Set `OPENSPACE_IMAGE_TAG=v0.6.1` in `.env` after that release tag is published if you want a pinned rollout.
 
 ## Important Security Limit
 

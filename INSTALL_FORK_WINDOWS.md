@@ -6,7 +6,7 @@ This guide installs or updates a Windows machine to the tagged Cubecloud fork re
 
 - Fork repository: `https://github.com/JZKK720/OpenSpace.git`
 - Rolling GHCR channel: `main`
-- GHCR rollout release tag: `v0.6.0` (publish this tag from `origin/main` to cut the next pinned pull-first release)
+- GHCR rollout release tag: `v0.6.1` (publish this tag from `origin/main` to cut the next pinned pull-first release)
 - Tracking branch: `main` (always latest fork baseline)
 
 ## Prerequisites
@@ -54,9 +54,9 @@ Copy-Item .env.example .env        # then edit IRONCLAW_AUTH_TOKEN etc.
 ### Pin a tagged release instead of the rolling `main` channel
 
 ```powershell
-.\scripts\install.ps1 -ImageTag v0.6.0
+.\scripts\install.ps1 -ImageTag v0.6.1
 # or later:
-.\scripts\docker-up.ps1 -ImageTag v0.6.0
+.\scripts\docker-up.ps1 -ImageTag v0.6.1
 ```
 
 ### Local-build fallback (base-image or dependency change)
@@ -142,7 +142,7 @@ OPENSPACE_IMAGE_REGISTRY=ghcr.io/jzkk720
 OPENSPACE_IMAGE_TAG=main
 ```
 
-Set `OPENSPACE_IMAGE_TAG=v0.6.0` after the tag is published if you want to pin this machine to the GHCR rollout release instead of the rolling `main` channel.
+Set `OPENSPACE_IMAGE_TAG=v0.6.1` after the tag is published if you want to pin this machine to the GHCR rollout release instead of the rolling `main` channel.
 
 ## Verification
 
@@ -154,6 +154,8 @@ Invoke-RestMethod http://127.0.0.1:7788/api/v1/external-agents
 Invoke-RestMethod http://127.0.0.1:7788/api/v1/standalone-apps
 docker compose -f docker-compose.release.yml ps
 ```
+
+For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps1` smoke check or `curl.exe`/Python clients for POST requests. Windows PowerShell 5.1 `Invoke-WebRequest` can drop longer Hermes handoff responses even when the dashboard route succeeds.
 
 Expected dashboard registry results:
 
@@ -226,7 +228,7 @@ git pull origin main
 To pin a published release tag from `origin/main`, set `OPENSPACE_IMAGE_TAG` in `.env` or pass `-ImageTag`:
 
 ```powershell
-.\scripts\docker-up.ps1 -ImageTag v0.6.0
+.\scripts\docker-up.ps1 -ImageTag v0.6.1
 ```
 
 Or use the install script in update mode (it auto-detects an existing clone and pulls):

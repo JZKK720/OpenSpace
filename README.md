@@ -25,6 +25,7 @@ Code in this repository remains available under the MIT license in [LICENSE](LIC
 
 ## 📢 News
 
+- **2026-05-02** 📦 **v0.6.1 — Auth-preflight release and Windows-safe handoff smoke checks.** External agents now fail fast when required auth env vars are missing, the dashboard surfaces those config errors directly, and the Windows installer now verifies IronClaw/Hermes handoff through a PowerShell-safe HTTP client instead of relying on fragile `Invoke-WebRequest` POST behavior.
 - **2026-05-02** 📦 **v0.6.0 — OpenClaw threading and GHCR-aligned local builds.** The Cubecloud fork now ships the OpenClaw threaded replay adapter, mirrors Docker base images into GHCR for tag-aligned local rebuilds, and keeps `OPENSPACE_IMAGE_TAG` consistent across pull-first and `-LocalBuild` workflows.
 - **2026-04-28** 📦 **v0.5.0 — GHCR rollout and pull-first updates.** The Cubecloud fork now publishes `openspace-runtime`, `openspace-agents-monitor`, and `openspace-cubecloud-dashboard` images to GHCR from `origin/main` and tagged releases. `scripts/docker-up.ps1` and `scripts/install.ps1` now default to pull-first upgrades, while `-LocalBuild` remains the explicit developer fallback.
 - **2026-04-15** 🤝 **v0.4.0 — Multi-agent gateway: IronClaw, OpenClaw, and Hermes.** Unified external-agent dashboard wires all three delegated runtimes: IronClaw (`chat-thread` bearer-auth protocol), OpenClaw (`openclaw-gateway` adapter that replays thread messages over `/v1/chat/completions`), and Hermes (`openai-compat` stateless adapter). Agent health probes, task handoff, and threaded dashboard history consolidated in a single panel. Smoke test extended with IronClaw chat-thread and OpenClaw adapter checks. `.env` gains OpenClaw and Hermes defaults.
@@ -319,8 +320,8 @@ docker compose -f docker-compose.release.yml up -d --remove-orphans
 #### Pin a tagged rollout release
 
 ```powershell
-.\scripts\docker-up.ps1 -ImageTag v0.6.0
-# or set OPENSPACE_IMAGE_TAG=v0.6.0 in .env before updating
+.\scripts\docker-up.ps1 -ImageTag v0.6.1
+# or set OPENSPACE_IMAGE_TAG=v0.6.1 in .env before updating
 ```
 
 #### Local-build fallback (after Dockerfile or dependency changes)
@@ -383,7 +384,7 @@ OPENSPACE_IMAGE_REGISTRY=ghcr.io/jzkk720
 OPENSPACE_IMAGE_TAG=main
 ```
 
-Leave `OPENSPACE_IMAGE_TAG=main` to track the rolling fork build, or set it to a tagged release such as `v0.6.0` to pin a rollout.
+Leave `OPENSPACE_IMAGE_TAG=main` to track the rolling fork build, or set it to a tagged release such as `v0.6.1` to pin a rollout.
 
 #### Verify the stack
 
@@ -393,6 +394,8 @@ Invoke-RestMethod http://127.0.0.1:7788/api/v1/external-agents
 Invoke-RestMethod http://127.0.0.1:7788/api/v1/standalone-apps
 docker compose -f docker-compose.release.yml ps
 ```
+
+For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps1` smoke check or `curl.exe`/Python clients for POST requests. Windows PowerShell 5.1 `Invoke-WebRequest` can drop longer Hermes handoff responses even when the dashboard route succeeds.
 
 Expected: external agents `ironclaw`, `openclaw`, `hermes`; standalone app `my-daily-monitor`.
 

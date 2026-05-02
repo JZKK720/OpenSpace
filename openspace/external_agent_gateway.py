@@ -611,6 +611,44 @@ def get_external_agent_history(
     return adapter.history(agent, thread_id=thread_id, limit=limit)
 
 
+def _has_authorization_header(headers: Any) -> bool:
+    if not isinstance(headers, dict):
+        return False
+    for key, value in headers.items():
+        if str(key).strip().lower() == "authorization" and str(value or "").strip():
+            return True
+    return False
+
+
+def _ensure_required_auth(agent: Dict[str, Any], *, require_capability: str) -> None:
+    if require_capability == "handoff":
+        token = agent.get("_actionAuthToken")
+        headers = agent.get("_actionHeaders")
+        env_name = str(agent.get("_actionAuthTokenEnv") or "").strip()
+        scope = "handoff"
+    elif require_capability == "history":
+        token = agent.get("_historyAuthToken")
+        headers = agent.get("_historyHeaders")
+        env_name = str(agent.get("_historyAuthTokenEnv") or "").strip()
+        scope = "history"
+    elif require_capability == "mcp":
+        token = agent.get("_mcpAuthToken")
+        headers = agent.get("_mcpHeaders")
+        env_name = str(agent.get("_mcpAuthTokenEnv") or "").strip()
+        scope = "mcp"
+    else:
+        return
+
+    if str(token or "").strip() or _has_authorization_header(headers) or not env_name:
+        return
+
+    agent_id = str(agent.get("id") or "external-agent").strip() or "external-agent"
+    raise ExternalAgentGatewayError(
+        f"External agent '{agent_id}' requires auth for {scope}. Set {env_name}.",
+        status_code=400,
+    )
+
+
 def _resolve_adapter(
     agent: Dict[str, Any],
     *,
@@ -634,6 +672,8 @@ def _resolve_adapter(
                 "capabilities": sorted(capabilities),
             },
         )
+
+    _ensure_required_auth(agent, require_capability=require_capability)
 
     for adapter in _ADAPTERS:
         if adapter.matches(protocol):

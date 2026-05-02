@@ -27,6 +27,7 @@ export default function ExternalAgentCard({ agent }: ExternalAgentCardProps) {
   const threadId = handoff?.threadId ?? null;
   const awaitingResponse = isTurnActive(latestTurn?.state);
   const handoffStatus = handoff && 'status' in handoff ? handoff.status : null;
+  const displayError = error ?? (!agent.available ? agent.error : null);
 
   useEffect(() => {
     if (!canPollHistory || !threadId || !awaitingResponse) {
@@ -174,7 +175,7 @@ export default function ExternalAgentCard({ agent }: ExternalAgentCardProps) {
               </a>
             ) : null}
           </div>
-          {error ? <div className="text-xs text-danger">{error}</div> : null}
+          {displayError ? <div className="text-xs text-danger">{displayError}</div> : null}
           {!agent.available ? <div className="text-xs text-muted">{t('dashboard.externalAgentsUnavailableHint')}</div> : null}
         </div>
       ) : null}
@@ -198,9 +199,7 @@ export default function ExternalAgentCard({ agent }: ExternalAgentCardProps) {
         </div>
       ) : null}
 
-      {!agent.available && agent.error && !canHandoff ? (
-        <div className="text-xs text-danger">{agent.error}</div>
-      ) : null}
+      {!canHandoff && !agent.available && agent.error ? <div className="text-xs text-danger">{agent.error}</div> : null}
     </div>
   );
 }

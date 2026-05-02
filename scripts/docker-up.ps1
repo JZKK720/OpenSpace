@@ -40,7 +40,7 @@
     .\scripts\docker-up.ps1
 
     # Pin a tagged rollout release from GHCR:
-    .\scripts\docker-up.ps1 -ImageTag v0.6.0
+    .\scripts\docker-up.ps1 -ImageTag v0.6.1
 
     # Force full rebuild from local Dockerfiles:
     .\scripts\docker-up.ps1 -LocalBuild -Fresh
