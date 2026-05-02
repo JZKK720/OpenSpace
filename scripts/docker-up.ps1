@@ -185,7 +185,7 @@ Write-Host '[docker-up] Stack is up. Service URLs:'
 Write-Host '  Cubecloud dashboard   http://127.0.0.1:7788'
 Write-Host '  Agents monitor        http://127.0.0.1:5173'
 Write-Host '  OpenSpace runtime MCP http://127.0.0.1:8788/mcp'
-Write-Host '  OpenSpace remote MCP  http://127.0.0.1:8789/mcp'
+Write-Host '  OpenSpace remote MCP  internal-only via openspace-remote-agent:8080/mcp'
 Write-Host ''
 if ($UseLocalBuild) {
     Write-Host '[docker-up] Mode: local build fallback.'

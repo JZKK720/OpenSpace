@@ -92,7 +92,7 @@ docker compose ps
 | Cubecloud dashboard | `http://127.0.0.1:7788` |
 | Agents monitor | `http://127.0.0.1:5173` |
 | OpenSpace runtime MCP | `http://127.0.0.1:8788/mcp` |
-| OpenSpace remote MCP | `http://127.0.0.1:8789/mcp` |
+| OpenSpace remote MCP | internal-only via `openspace-remote-agent:8080/mcp` |
 
 ### Logs
 

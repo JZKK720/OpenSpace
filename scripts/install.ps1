@@ -277,7 +277,7 @@ Write-Host "  Service URLs" -ForegroundColor White
 Write-Host "    Dashboard         http://127.0.0.1:7788" -ForegroundColor White
 Write-Host "    Agents monitor    http://127.0.0.1:5173" -ForegroundColor White
 Write-Host "    Runtime MCP       http://127.0.0.1:8788/mcp" -ForegroundColor White
-Write-Host "    Remote MCP        http://127.0.0.1:8789/mcp" -ForegroundColor White
+Write-Host "    Remote MCP        internal-only via openspace-remote-agent:8080/mcp" -ForegroundColor White
 Write-Host "────────────────────────────────────────────" -ForegroundColor DarkGray
 Write-Host "  Done. Edit .env to configure agent tokens and URLs." -ForegroundColor Cyan
 Write-Host ""
