@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [agentsChecking, setAgentsChecking] = useState(true);
   const [apps, setApps] = useState<StandaloneAppStatus[]>([]);
   const [appsChecking, setAppsChecking] = useState(true);
+  const mainIndexApps = apps.filter((app) => app.id !== 'openharness');
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +124,7 @@ export default function DashboardPage() {
             <div>
               <div className="text-xs uppercase tracking-[0.16em] text-muted">{t('dashboard.agentAppsKicker')}</div>
               {!appsChecking ? (
-                <div className="text-xs text-muted mt-1">{t('dashboard.agentAppsCount', { count: apps.length })}</div>
+                <div className="text-xs text-muted mt-1">{t('dashboard.agentAppsCount', { count: mainIndexApps.length })}</div>
               ) : null}
             </div>
             <Link to="/showcase" className="text-xs text-muted hover:text-ink transition-colors">{t('dashboard.agentAppsViewAll')}</Link>
@@ -131,12 +132,11 @@ export default function DashboardPage() {
 
           {appsChecking ? (
             <div className="text-sm text-muted">{t('dashboard.agentAppsChecking')}</div>
-          ) : apps.length === 0 ? (
+          ) : mainIndexApps.length === 0 ? (
             <EmptyState title={t('dashboard.agentAppsEmptyTitle')} description={t('dashboard.agentAppsEmptyDescription')} />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-              {apps.map((app) => {
-                const isHarness = app.id === 'openharness';
+              {mainIndexApps.map((app) => {
                 const inner = (
                   <div className={`record-card border border-[color:var(--color-border)] bg-[color:var(--color-bg-page)] p-4 space-y-3 h-full transition-opacity ${app.available ? '' : 'opacity-50'}`}>
                     <div className="flex items-start justify-between gap-3">
@@ -175,15 +175,7 @@ export default function DashboardPage() {
                   return <div key={app.id} className="block h-full cursor-not-allowed">{inner}</div>;
                 }
 
-                return isHarness ? (
-                  <Link key={app.id} to="/harness-agent" className="block h-full">
-                    {inner}
-                  </Link>
-                ) : (
-                  <a key={app.id} href={app.publicUrl} target="_blank" rel="noopener noreferrer" className="block h-full">
-                    {inner}
-                  </a>
-                );
+                return <a key={app.id} href={app.publicUrl} target="_blank" rel="noopener noreferrer" className="block h-full">{inner}</a>;
               })}
             </div>
           )}
