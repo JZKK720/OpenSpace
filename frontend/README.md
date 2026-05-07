@@ -123,6 +123,8 @@ CUBECLOUD_PORT=8080 AGENTS_MONITOR_PORT=5174 docker compose up --build -d
 
 This Compose stack is for the **web apps**. OpenSpace features that depend on direct host GUI or shell automation should still run on the host machine.
 
+Open Design is exposed through the Showcase app registry, not a dedicated OpenSpace route. Configure its browser-facing and probe URLs in the repo root `.env` with `OPEN_DESIGN_PUBLIC_URL`, `OPEN_DESIGN_INTERNAL_URL`, and `OPEN_DESIGN_HEALTH_URL`.
+
 ## Main Pages
 
 - **Dashboard** – overall health, pipeline stages, top skills, recent workflows

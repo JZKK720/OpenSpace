@@ -315,7 +315,7 @@
     "statusLive": "Live",
     "statusDown": "Unavailable",
     "appsKicker": "Apps Gallery",
-    "appsTitle": "My Daily Monitor and app gallery",
+    "appsTitle": "CubeCloud app gallery",
     "appsCountSummary": "{{live}} live · {{total}} apps",
     "appsEmptyTitle": "No app deployed yet",
     "appsEmptyDescription": "Add entries in openspace/config/standalone_apps.json to publish more Cubecloud app cards here.",

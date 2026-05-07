@@ -397,7 +397,7 @@ docker compose -f docker-compose.release.yml ps
 
 For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps1` smoke check or `curl.exe`/Python clients for POST requests. Windows PowerShell 5.1 `Invoke-WebRequest` can drop longer Hermes handoff responses even when the dashboard route succeeds.
 
-Expected: external agents `ironclaw`, `openclaw`, `hermes`; standalone app `my-daily-monitor`.
+Expected: external agents `ironclaw`, `openclaw`, `hermes`; standalone apps are driven by `openspace/config/standalone_apps.json` and can include `my-daily-monitor`, `open-design`, and other configured entries.
 
 > [!NOTE]
 > **Windows full guide:** [INSTALL_FORK_WINDOWS.md](INSTALL_FORK_WINDOWS.md) covers the local non-Docker build path and minimal runtime bundle options.

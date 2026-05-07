@@ -30,6 +30,7 @@ _OPENCLAW_HISTORY_STORE_PATH = Path(gettempdir()) / "openspace_openclaw_history.
 _OPENCLAW_HISTORY_MAX_TURNS = 200
 _OPENCLAW_HISTORY_LOCK = Lock()
 _OPENCLAW_HISTORY_CACHE: Dict[str, Dict[str, List[Dict[str, Any]]]] | None = None
+_OPENCLAW_REQUEST_TIMEOUT_SECONDS = 240.0
 
 
 class ExternalAgentAdapter(ABC):
@@ -456,7 +457,7 @@ class OpenClawGatewayAdapter(ExternalAgentAdapter):
             payload=payload,
             auth_token=str(agent.get("_actionAuthToken") or "").strip() or None,
             headers=_headers(agent.get("_actionHeaders")),
-            timeout=60.0,
+            timeout=_OPENCLAW_REQUEST_TIMEOUT_SECONDS,
         )
 
         latest_turn = _record_openclaw_turn(

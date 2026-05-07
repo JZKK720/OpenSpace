@@ -15,7 +15,10 @@ Use the **Upstream Sync** agent (@sync-upstream) to compare this fork against up
 
 - Start in review-only mode.
 - Fetch `upstream` and `origin`, then report:
+  - the local checkout state relative to `origin/main` as `in-sync`, `behind`, `ahead`, or `diverged`, including ahead/behind commit counts
   - local-only commits and remote-only commits relative to `origin/main`, so the user can see whether the checkout already drifted from the fork baseline used by Cubecloud builds
+  - whether `origin/main` is already far enough ahead of local that the shortest safe next step is simply catching up the local checkout first
+  - whether Docker, Compose, runtime bundle, install-script, or release-doc changes already landed on `origin/main`, so container planning starts from the real fork baseline
   - upstream-only commits relative to `main`
   - fork-only commits and all `cubecloud-*` tags that must be preserved
   - the recommended sync strategy: `no update`, cherry-pick selected upstream commits, or rebase the fork onto the target
@@ -25,6 +28,7 @@ Use the **Upstream Sync** agent (@sync-upstream) to compare this fork against up
 
 ## Recommendation Rules
 
+- Recommend `update local first` before broader sync or container work when the main issue is that `origin/main` is ahead of the current checkout and already contains the relevant build or release changes.
 - Recommend `no update yet` when the upstream delta is docs-only, low value for this fork, or concentrated in fork-only product surfaces without a matching bugfix or security reason.
 - Recommend `cherry-pick` when the upstream delta is small, high-value, and isolated away from the main divergence hotspots.
 - Recommend `rebase` when the user wants a refreshed upstream baseline, the replay set is broad, or security and dependency fixes touch multiple shared layers.
@@ -37,6 +41,7 @@ This is the **Cubecloud fork** (`JZKK720/OpenSpace`) of `HKUDS/OpenSpace`.
 Key facts the agent must know:
 - This fork is intentionally diverged for Cubecloud dashboard, showcase, and Windows and local-runtime support
 - `origin/main` is the deployment baseline for Cubecloud builds, so review local drift against it before drawing upstream conclusions
+- The report should answer the user's local-baseline question directly: is `origin/main` already ahead of local, by how much, and does that already explain the build or container drift they are seeing
 - Push target is **`origin`** only — never `upstream`
 - Force-push must use `--force-with-lease`
 - The litellm `<1.82.7` pin from upstream is a **security fix** (PYSEC-2026-2) and must be preserved in `pyproject.toml` and `requirements.txt` after conflict resolution
@@ -71,4 +76,4 @@ If the user approves actual sync work, continue with confirmation gates for:
 
 If the safest recommendation is `no update`, stop after the report and explain what would need to change before a sync becomes worthwhile.
 
-Report final status clearly: divergence summary, recommended sync path, conflict risks, validation plan, and execution status if any changes were made.
+Report final status clearly: local vs fork baseline, upstream divergence summary, recommended sync path, conflict risks, validation plan, and execution status if any changes were made.

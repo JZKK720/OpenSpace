@@ -315,7 +315,7 @@
     "statusLive": "在线",
     "statusDown": "不可用",
     "appsKicker": "应用平台",
-    "appsTitle": "My Daily Monitor 与应用平台",
+    "appsTitle": "CubeCloud 应用画廊",
     "appsCountSummary": "{{live}} 个在线 · 共 {{total}} 个应用",
     "appsEmptyTitle": "还没有部署应用",
     "appsEmptyDescription": "在 openspace/config/standalone_apps.json 中添加条目后，这里就会显示更多 Cubecloud 应用卡片。",

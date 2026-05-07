@@ -160,7 +160,7 @@ For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps
 Expected dashboard registry results:
 
 - external agents: `ironclaw`, `openclaw`, `hermes`
-- standalone app: `my-daily-monitor`
+- standalone apps are driven by `openspace/config/standalone_apps.json` and may include `my-daily-monitor`, `open-design`, and other configured entries
 
 ## Optional: Local Non-Docker Build
 
