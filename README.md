@@ -377,6 +377,8 @@ GATEWAY_AUTH_TOKEN=your_token_here
 
 All other values have defaults in `.env.example`. Override IronClaw URLs if your deployment differs.
 
+Browser-facing defaults also matter for dashboard links: `HERMES_PUBLIC_URL` should point to the Hermes UI on `http://127.0.0.1:9119/`, while `HERMES_ACTION_URL` stays on the OpenAI-compatible API at port `8789`. `OPENHARNESS_PUBLIC_URL` should point to the OpenHarness web UI on `http://localhost:8581`.
+
 For pull-first releases, `.env.example` also defines:
 
 ```dotenv
@@ -435,6 +437,8 @@ OpenSpace now proxies that flow at `POST /api/v1/external-agents/ironclaw/handof
 When you run the dashboard in Docker, set `IRONCLAW_AUTH_TOKEN` to the same value as IronClaw's `GATEWAY_AUTH_TOKEN` so the dashboard container can create threads and submit work.
 
 The same registry also ships `OpenClaw` and `Hermes` defaults. `OpenClaw` stays on `/v1/chat/completions`, but the dedicated `openclaw-gateway` adapter keeps thread continuity on the OpenSpace side by replaying prior turns into each request and mirroring completed history for dashboard refreshes. `Hermes` remains a stateless `openai-compat` handoff target.
+
+For browser navigation from the dashboard, `HERMES_PUBLIC_URL` should target the Hermes UI on port `9119`; the API and health probes remain on port `8789`. `OPENHARNESS_PUBLIC_URL` should target the OpenHarness UI on port `8581`.
 
 If your OpenClaw gateway runs in Docker and uses host Ollama, you can also set `OPENCLAW_OLLAMA_BASE_URL` in `.env`. The Windows entry points in `scripts/docker-up.ps1` and `scripts/install.ps1` will push that value into `/home/node/.openclaw/openclaw.json` for the live `openclaw-openclaw-gateway-1` container and restart the gateway when the value changes.
 

@@ -130,10 +130,16 @@ OPENCLAW_AUTH_TOKEN=your_openclaw_gateway_token
 OPENCLAW_OLLAMA_BASE_URL=http://192.168.65.254:11434
 
 # Hermes — only needed if not running on default port 8789
+HERMES_PUBLIC_URL=http://127.0.0.1:9119/
 HERMES_INTERNAL_URL=http://host.docker.internal:8789/
 HERMES_ACTION_URL=http://host.docker.internal:8789/v1/chat/completions
 HERMES_API_KEY=your_key_if_required
+
+# OpenHarness browser-facing UI
+OPENHARNESS_PUBLIC_URL=http://localhost:8581
 ```
+
+`HERMES_PUBLIC_URL` is the dashboard/browser link for the Hermes UI on port `9119`; the actual OpenAI-compatible API that OpenSpace calls stays on port `8789`.
 
 For GHCR-based updates, `.env` also controls which published images are used:
 
