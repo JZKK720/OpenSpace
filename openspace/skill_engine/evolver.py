@@ -302,6 +302,8 @@ class SkillEvolver:
                 f"[Trigger:analysis] Evolved {len(results)} skill(s): {names} "
                 f"from task {analysis.task_id}"
             )
+
+        self._store.mark_evolution_processed(analysis.task_id)
         return results
 
     # Trigger 2: tool quality degradation

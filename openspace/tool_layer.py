@@ -61,6 +61,7 @@ class OpenSpaceConfig:
     
     # Skill Evolution
     evolution_max_concurrent: int = 3        # Max parallel evolutions per trigger
+    execution_analysis_timeout: float = 300.0  # Overall post-task analyzer/evolver bound
     
     # Logging Configuration
     log_level: str = "INFO"
@@ -619,9 +620,21 @@ class OpenSpace:
             if cancelled_exc is None:
                 # Run execution analysis + evolution BEFORE building the return
                 # value, so evolved_skills is populated.
-                await self._maybe_analyze_execution(
-                    task_id, recording_dir, result
-                )
+                try:
+                    await asyncio.wait_for(
+                        self._maybe_analyze_execution(
+                            task_id, recording_dir, result
+                        ),
+                        timeout=self.config.execution_analysis_timeout,
+                    )
+                except asyncio.TimeoutError:
+                    result["analysis_timed_out"] = True
+                    logger.warning(
+                        "Analyzer/evolver exceeded %.1fs bound for task %s; "
+                        "cancelled. Evolved skills (if any) may be incomplete.",
+                        self.config.execution_analysis_timeout,
+                        task_id,
+                    )
 
                 # Trigger quality evolution periodically
                 await self._maybe_evolve_quality()
@@ -861,8 +874,8 @@ class OpenSpace:
                     })
 
         except Exception as e:
-            # Analysis failure must never break the main execution flow
-            logger.debug(f"Execution analysis skipped: {e}")
+            # Analysis failure must never break the main execution flow.
+            logger.warning(f"Execution analysis skipped: {e}")
 
     async def _maybe_evolve_quality(self) -> None:
         """Trigger quality evolution based on global execution count.

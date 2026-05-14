@@ -25,6 +25,9 @@
 
 ## 📢 最新动态
 
+- **2026-04-16** 📊 **进化候选生命周期追踪** — skill store 新增 `evolution_processed_at` 字段，清晰区分待处理与已处理的进化候选记录。
+- **2026-04-12** 🍎 **macOS 平台加固** — 将 `atomacos` 从核心 macOS 导入中解耦，截图、窗口控制、录屏等功能无需 atomacos 即可独立运行。
+- **2026-04-10** 🎯 **CAPTURED skills** 现已正确持久化到宿主 Agent 自身的 skill 目录，而非默认注册路径。云端 skill 上传现已正确支持**私有可见性**。
 - **2026-04-09** 💬 多渠道**通信网关**上线。OpenSpace 现可接收并回复外部平台消息。内置 **WhatsApp**（Baileys bridge + 扫码认证）与**飞书**（HTTP webhook）适配器，支持会话管理、附件缓存和白名单访问控制。配置方式见 [`openspace/config/README.md`](openspace/config/README.md)。
 - **2026-04-07** 🌐 OpenSpace MCP 新增独立 **SSE** 与 **streamable HTTP** 启动方式，便于远端 host 通过 HTTP 接入，绕过基于 stdio 的 MCP server timeout 瓶颈。具体接入方式见 [host integration 文档](openspace/host_skills/README.md)。
 - **2026-04-06** 🛠️ 修复多项运行时问题，覆盖 grounding、MCP 服务、skill 进化与持久化链路，长流程执行的稳定性与恢复能力进一步提升。
