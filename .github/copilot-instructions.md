@@ -47,7 +47,17 @@ openspace-dashboard --host 127.0.0.1 --port 7788
 docker compose up -d --build
 ```
 
-This checked-in Compose flow still builds local images. Do not assume registry-published images exist unless the repo also adds a GHCR release workflow.
+This checked-in Compose flow still builds local images. For pull-first upgrades use the GHCR images (see below).
+
+**GHCR image publishing** is handled by `.github/workflows/ghcr-release.yml`, which fires automatically:
+- on **push to `main`** — publishes `main`-channel images (`openspace-runtime:main`, `openspace-agents-monitor:main`, `openspace-cubecloud-dashboard:main`) plus immutable `sha-<shortsha>` tags
+- on **push of a `v*` tag** — also publishes versioned tags and creates a GitHub Release
+
+No manual workflow dispatch is needed after a normal sync push. Pull clients with:
+```powershell
+docker compose pull
+docker compose up -d
+```
 
 **Linting / tests** (dev extras: `pip install -e ".[dev]"`):
 ```powershell
@@ -73,6 +83,7 @@ See [INSTALL_FORK_WINDOWS.md](../INSTALL_FORK_WINDOWS.md) for the full Windows r
 - For requests asking whether the fork baseline is already ahead of local, classify `HEAD` versus `origin/main` as `in-sync`, `behind`, `ahead`, or `diverged` with commit counts before any upstream conclusion. Call out changed release surfaces explicitly: `docker-compose.release.yml`, `docker-compose.yml`, `deploy/local-runtime/`, `Dockerfile.*`, `scripts/*.ps1`, `README.md`, and `INSTALL_FORK_WINDOWS.md`.
 - Preferred workflow: fetch `upstream`, compare `upstream/main` with `origin/main`, inventory upstream-only commits, fork-only commits, and `cubecloud-*` tags, then recommend `no update`, targeted cherry-picks, or a full rebase before rewriting history, moving tags, or pushing.
 - If `origin/main` already contains the build or container changes the user is asking about, recommend catching up the local checkout and validating from that baseline before proposing new Docker or release edits. Use the [Sync with Upstream prompt](./prompts/sync-upstream.prompt.md) for this preflight, then move to the [Plan GHCR Release prompt](./prompts/ghcr-release.prompt.md) only if additional release work is still needed.
+- When upstream is ahead **and** the user also wants updated GHCR images in the same session, use the [Sync Upstream and Release prompt](./prompts/sync-and-release.prompt.md) which chains sync → validate → push (auto-triggers GHCR `main`-channel publish) → optional version tag.
 - Treat `openspace/config/external_agents.json`, `openspace/config/standalone_apps.json`, `openspace/dashboard_server.py`, `frontend/`, `showcase/`, `docker-compose.yml`, `Dockerfile.*`, and `scripts/*.ps1` as divergence hotspots that need careful merge resolution. If both fork and upstream changed config registries, dashboard API wiring, Docker env wiring, or branding-sensitive UI text in the same area, stop at the review and ask before merging.
 - Preserve all `cubecloud-*` tags. If history changes, remap tags deliberately and confirm before force-moving them.
 - When evaluating whether the fork should update, explicitly verify the `litellm<1.82.7` security pin in both `pyproject.toml` and `requirements.txt`, validate `openspace/config/*.json`, and include dashboard API checks (`/api/v1/health`, `/api/v1/external-agents`, `/api/v1/standalone-apps`) whenever the Docker stack is part of the plan.
