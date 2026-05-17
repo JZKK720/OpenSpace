@@ -3,13 +3,7 @@
     "dashboard": "OpenSpace",
     "skills": "Skills",
     "workflows": "Workflows",
-    "nanobot": "Nanobot",
-    "harnessAgent": "Harness Agent"
-  },
-  "harnessAgent": {
-    "title": "Harness Agent",
-    "subtitle": "Interactive oh REPL via ttyd",
-    "openInTab": "Open in new tab"
+    "nanobot": "Nanobot"
   },
   "common": {
     "loading": "Loading…",

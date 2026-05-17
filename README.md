@@ -380,7 +380,9 @@ GATEWAY_AUTH_TOKEN=your_token_here
 
 All other values have defaults in `.env.example`. Override IronClaw URLs if your deployment differs.
 
-Browser-facing defaults also matter for dashboard links: `HERMES_PUBLIC_URL` should point to the Hermes UI on `http://127.0.0.1:9119/`, while `HERMES_ACTION_URL` stays on the OpenAI-compatible API at port `8789`. `OPENHARNESS_PUBLIC_URL` should point to the OpenHarness web UI on `http://localhost:8581`.
+Browser-facing defaults also matter for dashboard links: `HERMES_PUBLIC_URL` should point to the Hermes UI on `http://127.0.0.1:9119/`, while `HERMES_ACTION_URL` stays on the OpenAI-compatible API at port `8789`. `AIONUI_PUBLIC_URL` should point to the AgentOS / AionUi UI on `http://127.0.0.1:3308/`.
+
+If you want AionUi workflows to appear in the Workflows page, set `AIONUI_WORKFLOWS_SOURCE_DIR` in the repo-root `.env` to either an exported workflow folder, an exported AionUi conversation JSON file/folder, or the live AionUi data directory / `aionui.db`, then run `python sync_aionui_workflows.py` to mirror them into `logs/recordings/aionui-workflows`.
 
 For pull-first releases, `.env.example` also defines:
 
@@ -402,7 +404,7 @@ docker compose -f docker-compose.release.yml ps
 
 For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps1` smoke check or `curl.exe`/Python clients for POST requests. Windows PowerShell 5.1 `Invoke-WebRequest` can drop longer Hermes handoff responses even when the dashboard route succeeds.
 
-Expected: external agents `ironclaw`, `openclaw`, `hermes`; standalone apps are driven by `openspace/config/standalone_apps.json` and can include `my-daily-monitor`, `open-design`, and other configured entries.
+Expected: external agents `ironclaw`, `openclaw`, `hermes`; standalone apps are driven by `openspace/config/standalone_apps.json` and can include `my-daily-monitor`, `open-design`, `aionui`, and other configured entries.
 
 > [!NOTE]
 > **Windows full guide:** [INSTALL_FORK_WINDOWS.md](INSTALL_FORK_WINDOWS.md) covers the local non-Docker build path and minimal runtime bundle options.
@@ -441,7 +443,7 @@ When you run the dashboard in Docker, set `IRONCLAW_AUTH_TOKEN` to the same valu
 
 The same registry also ships `OpenClaw` and `Hermes` defaults. `OpenClaw` stays on `/v1/chat/completions`, but the dedicated `openclaw-gateway` adapter keeps thread continuity on the OpenSpace side by replaying prior turns into each request and mirroring completed history for dashboard refreshes. `Hermes` remains a stateless `openai-compat` handoff target.
 
-For browser navigation from the dashboard, `HERMES_PUBLIC_URL` should target the Hermes UI on port `9119`; the API and health probes remain on port `8789`. `OPENHARNESS_PUBLIC_URL` should target the OpenHarness UI on port `8581`.
+For browser navigation from the dashboard, `HERMES_PUBLIC_URL` should target the Hermes UI on port `9119`; the API and health probes remain on port `8789`. `AIONUI_PUBLIC_URL` should target the AgentOS / AionUi UI on port `3308`.
 
 If your OpenClaw gateway runs in Docker and uses host Ollama, you can also set `OPENCLAW_OLLAMA_BASE_URL` in `.env`. The Windows entry points in `scripts/docker-up.ps1` and `scripts/install.ps1` will push that value into `/home/node/.openclaw/openclaw.json` for the live `openclaw-openclaw-gateway-1` container and restart the gateway when the value changes.
 

@@ -135,11 +135,13 @@ HERMES_INTERNAL_URL=http://host.docker.internal:8789/
 HERMES_ACTION_URL=http://host.docker.internal:8789/v1/chat/completions
 HERMES_API_KEY=your_key_if_required
 
-# OpenHarness browser-facing UI
-OPENHARNESS_PUBLIC_URL=http://localhost:8581
+# AgentOS / AionUi browser-facing UI
+AIONUI_PUBLIC_URL=http://127.0.0.1:3308/
 ```
 
 `HERMES_PUBLIC_URL` is the dashboard/browser link for the Hermes UI on port `9119`; the actual OpenAI-compatible API that OpenSpace calls stays on port `8789`.
+
+Set `AIONUI_WORKFLOWS_SOURCE_DIR` in the repo-root `.env` and run `python sync_aionui_workflows.py` if you want AionUi workflows to appear in the Workflows page. The source can be an exported workflow folder, an exported conversation JSON file/folder, or the live AionUi data directory / `aionui.db`.
 
 For GHCR-based updates, `.env` also controls which published images are used:
 
@@ -166,7 +168,7 @@ For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps
 Expected dashboard registry results:
 
 - external agents: `ironclaw`, `openclaw`, `hermes`
-- standalone apps are driven by `openspace/config/standalone_apps.json` and may include `my-daily-monitor`, `open-design`, and other configured entries
+- standalone apps are driven by `openspace/config/standalone_apps.json` and may include `my-daily-monitor`, `open-design`, `aionui`, and other configured entries
 
 ## Optional: Local Non-Docker Build
 

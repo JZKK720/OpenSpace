@@ -3,13 +3,7 @@
     "dashboard": "智能体开放空间",
     "skills": "Skills",
     "workflows": "工作流",
-    "nanobot": "Nanobot",
-    "harnessAgent": "Harness Agent"
-  },
-  "harnessAgent": {
-    "title": "Harness Agent",
-    "subtitle": "通过 ttyd 提供的交互式 oh REPL",
-    "openInTab": "在新标签页中打开"
+    "nanobot": "Nanobot"
   },
   "common": {
     "loading": "加载中…",
