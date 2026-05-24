@@ -40,7 +40,7 @@ Use shared `mcp_servers` when the runtime is a tool surface, not a delegated wor
 
 ## Contract fields
 
-- `protocol`: adapter protocol name. Current supported delegate protocols include `chat-thread`, `http-json`, `openclaw-gateway`, and `openai-compat`.
+- `protocol`: adapter protocol name. Current supported delegate protocols include `chat-thread`, `http-json`, `openhuman-rpc`, `openclaw-gateway`, and `openai-compat`.
 - `capabilities`: any of `handoff`, `history`, `mcp`.
 - `handoff_mode`: expected handoff pattern such as `chat_thread` or `request_response`.
 - `history_mode`: expected history pattern such as `thread_history`, `poll`, or `none`.
@@ -51,6 +51,7 @@ Use shared `mcp_servers` when the runtime is a tool surface, not a delegated wor
 
 - `chat-thread`: threaded chat handoff using `action_url` plus the companion `/api/chat/thread/new` and `/api/chat/history` endpoints.
 - `http-json`: generic JSON-over-HTTP handoff. Use `action_url` plus optional field maps.
+- `openhuman-rpc`: OpenHuman JSON-RPC handoff using `action_url`, typically `/rpc`. OpenSpace checks `openhuman.inference_status` before dispatching `openhuman.inference_prompt`. The initial slice is handoff-only and does not expose thread history.
 - `openclaw-gateway`: OpenClaw-specific adapter over `/v1/chat/completions`. OpenSpace replays prior thread turns back into the `messages` array and mirrors completed history locally for dashboard refreshes.
 - `openai-compat`: stateless OpenAI-compatible handoff using `action_url`, typically `/v1/chat/completions`.
 - `mcp`: MCP-only runtime with no handoff adapter; tools are mounted through `mcp_url`.

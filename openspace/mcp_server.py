@@ -526,7 +526,63 @@ def _json_error(error: Any, **extra) -> str:
     return json.dumps({"error": str(error), **extra}, ensure_ascii=False)
 
 
-# MCP Tools (4 tools)
+# MCP Tools (7 tools)
+@mcp.tool()
+async def list_external_agents(
+    available_only: bool = False,
+    require_handoff: bool = False,
+) -> str:
+    """List configured external agents and their availability."""
+    from openspace.external_agent_tools import ListExternalAgentsTool
+
+    return await ListExternalAgentsTool()._arun(
+        available_only=available_only,
+        require_handoff=require_handoff,
+    )
+
+
+@mcp.tool()
+async def delegate_external_agent(
+    agent_id: str,
+    prompt: str,
+    thread_id: str = "",
+    timezone: str = "UTC",
+    wait_for_completion: bool = True,
+    history_limit: int = 10,
+    poll_interval_seconds: float = 4.0,
+    timeout_seconds: float = 90.0,
+) -> str:
+    """Delegate a prompt to a configured external agent."""
+    from openspace.external_agent_tools import DelegateExternalAgentTool
+
+    return await DelegateExternalAgentTool()._arun(
+        agent_id=agent_id,
+        prompt=prompt,
+        thread_id=thread_id,
+        timezone=timezone,
+        wait_for_completion=wait_for_completion,
+        history_limit=history_limit,
+        poll_interval_seconds=poll_interval_seconds,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+@mcp.tool()
+async def get_external_agent_history(
+    agent_id: str,
+    thread_id: str,
+    limit: int = 10,
+) -> str:
+    """Return the latest state and history for an external-agent thread."""
+    from openspace.external_agent_tools import GetExternalAgentHistoryTool
+
+    return await GetExternalAgentHistoryTool()._arun(
+        agent_id=agent_id,
+        thread_id=thread_id,
+        limit=limit,
+    )
+
+
 @mcp.tool()
 async def execute_task(
     task: str,

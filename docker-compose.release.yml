@@ -45,6 +45,8 @@ services:
     depends_on:
       openspace-remote-agent:
         condition: service_healthy
+      openhuman:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
@@ -69,11 +71,11 @@ services:
       IRONCLAW_AUTH_TOKEN: "${IRONCLAW_AUTH_TOKEN:-}"
       GATEWAY_AUTH_TOKEN: "${GATEWAY_AUTH_TOKEN:-}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
-      OPENCLAW_PUBLIC_URL: "${OPENCLAW_PUBLIC_URL:-http://127.0.0.1:18788/}"
-      OPENCLAW_INTERNAL_URL: "${OPENCLAW_INTERNAL_URL:-http://host.docker.internal:18788/}"
-      OPENCLAW_HEALTH_URL: "${OPENCLAW_HEALTH_URL:-http://host.docker.internal:18788/health}"
-      OPENCLAW_ACTION_URL: "${OPENCLAW_ACTION_URL:-http://host.docker.internal:18788/v1/chat/completions}"
-      OPENCLAW_AUTH_TOKEN: "${OPENCLAW_AUTH_TOKEN:-}"
+      OPENHUMAN_PUBLIC_URL: "${OPENHUMAN_PUBLIC_URL:-http://127.0.0.1:1420/}"
+      OPENHUMAN_INTERNAL_URL: "${OPENHUMAN_INTERNAL_URL:-http://openhuman:7788/}"
+      OPENHUMAN_HEALTH_URL: "${OPENHUMAN_HEALTH_URL:-http://openhuman:7788/health}"
+      OPENHUMAN_ACTION_URL: "${OPENHUMAN_ACTION_URL:-http://openhuman:7788/rpc}"
+      OPENHUMAN_RPC_TOKEN: "${OPENHUMAN_RPC_TOKEN:-}"
       HERMES_PUBLIC_URL: "${HERMES_PUBLIC_URL:-http://127.0.0.1:9119/}"
       HERMES_INTERNAL_URL: "${HERMES_INTERNAL_URL:-http://host.docker.internal:8789/}"
       HERMES_HEALTH_URL: "${HERMES_HEALTH_URL:-http://host.docker.internal:8789/health}"
@@ -103,6 +105,38 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  openhuman:
+    image: "ghcr.io/tinyhumansai/openhuman-core:${OPENHUMAN_CORE_IMAGE_TAG:-latest}"
+    user: "0:0"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    environment:
+      BACKEND_URL: "https://api.tinyhumans.ai"
+      OPENHUMAN_APP_ENV: production
+      OPENHUMAN_CORE_HOST: "0.0.0.0"
+      OPENHUMAN_CORE_PORT: "7788"
+      OPENHUMAN_CORE_TOKEN: "${OPENHUMAN_RPC_TOKEN:-change-me-openhuman-rpc}"
+      OPENHUMAN_WORKSPACE: "/home/openhuman/.openhuman"
+      XDG_CACHE_HOME: "/home/openhuman/.openhuman/cache"
+      TMPDIR: "/tmp"
+      RUST_LOG: "${OPENHUMAN_RUST_LOG:-info}"
+    ports:
+      - "127.0.0.1:${OPENHUMAN_DEBUG_PORT:-7181}:7788"
+    volumes:
+      - openhuman_workspace:/home/openhuman/.openhuman
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7788/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
   agents-monitor:
     image: "${OPENSPACE_IMAGE_REGISTRY:-ghcr.io/jzkk720}/openspace-agents-monitor:${OPENSPACE_IMAGE_TAG:-main}"
     extra_hosts:
@@ -119,16 +153,14 @@ services:
       IRONCLAW_HEALTH_URL: "${IRONCLAW_HEALTH_URL:-http://host.docker.internal:3231/}"
       IRONCLAW_ACTION_URL: "${IRONCLAW_ACTION_URL:-http://host.docker.internal:3231/api/chat/send}"
       IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
-      OPENCLAW_PUBLIC_URL: "${OPENCLAW_PUBLIC_URL:-http://127.0.0.1:18788/}"
-      OPENCLAW_INTERNAL_URL: "${OPENCLAW_INTERNAL_URL:-http://host.docker.internal:18788/}"
-      OPENCLAW_HEALTH_URL: "${OPENCLAW_HEALTH_URL:-http://host.docker.internal:18788/health}"
-      OPENCLAW_ACTION_URL: "${OPENCLAW_ACTION_URL:-http://host.docker.internal:18788/v1/chat/completions}"
-      OPENCLAW_AUTH_TOKEN: "${OPENCLAW_AUTH_TOKEN:-}"
+      OPENHUMAN_PUBLIC_URL: "${OPENHUMAN_PUBLIC_URL:-http://127.0.0.1:1420/}"
+      OPENHUMAN_INTERNAL_URL: "${OPENHUMAN_INTERNAL_URL:-http://openhuman:7788/}"
+      OPENHUMAN_HEALTH_URL: "${OPENHUMAN_HEALTH_URL:-http://openhuman:7788/health}"
+      OPENHUMAN_ACTION_URL: "${OPENHUMAN_ACTION_URL:-http://openhuman:7788/rpc}"
       HERMES_PUBLIC_URL: "${HERMES_PUBLIC_URL:-http://127.0.0.1:9119/}"
       HERMES_INTERNAL_URL: "${HERMES_INTERNAL_URL:-http://host.docker.internal:8789/}"
       HERMES_HEALTH_URL: "${HERMES_HEALTH_URL:-http://host.docker.internal:8789/health}"
       HERMES_ACTION_URL: "${HERMES_ACTION_URL:-http://host.docker.internal:8789/v1/chat/completions}"
-      HERMES_API_KEY: "${HERMES_API_KEY:-}"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
@@ -167,26 +199,10 @@ services:
       AIONUI_PUBLIC_URL: "${AIONUI_PUBLIC_URL:-http://127.0.0.1:3308/}"
       AIONUI_INTERNAL_URL: "${AIONUI_INTERNAL_URL:-http://host.docker.internal:3308/}"
       AIONUI_HEALTH_URL: "${AIONUI_HEALTH_URL:-http://host.docker.internal:3308/}"
-      IRONCLAW_INTERNAL_URL: "${IRONCLAW_INTERNAL_URL:-http://host.docker.internal:3231/}"
-      IRONCLAW_PUBLIC_URL: "${IRONCLAW_PUBLIC_URL:-http://127.0.0.1:3231/}"
-      IRONCLAW_HEALTH_URL: "${IRONCLAW_HEALTH_URL:-http://host.docker.internal:3231/}"
-      IRONCLAW_ACTION_URL: "${IRONCLAW_ACTION_URL:-http://host.docker.internal:3231/api/chat/send}"
-      IRONCLAW_AUTH_TOKEN: "${IRONCLAW_AUTH_TOKEN:-}"
-      GATEWAY_AUTH_TOKEN: "${GATEWAY_AUTH_TOKEN:-}"
-      IRONCLAW_MCP_URL: "${IRONCLAW_MCP_URL:-}"
-      OPENCLAW_PUBLIC_URL: "${OPENCLAW_PUBLIC_URL:-http://127.0.0.1:18788/}"
-      OPENCLAW_INTERNAL_URL: "${OPENCLAW_INTERNAL_URL:-http://host.docker.internal:18788/}"
-      OPENCLAW_HEALTH_URL: "${OPENCLAW_HEALTH_URL:-http://host.docker.internal:18788/health}"
-      OPENCLAW_ACTION_URL: "${OPENCLAW_ACTION_URL:-http://host.docker.internal:18788/v1/chat/completions}"
-      OPENCLAW_AUTH_TOKEN: "${OPENCLAW_AUTH_TOKEN:-}"
+      OPENSPACE_RUNTIME_MCP_URL: "http://openspace-runtime:8080/mcp"
       OPENSPACE_REMOTE_INTERNAL_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_HEALTH_URL: "http://openspace-remote-agent:8080/mcp"
       OPENSPACE_REMOTE_MCP_URL: "http://openspace-remote-agent:8080/mcp"
-      HERMES_PUBLIC_URL: "${HERMES_PUBLIC_URL:-http://127.0.0.1:9119/}"
-      HERMES_INTERNAL_URL: "${HERMES_INTERNAL_URL:-http://host.docker.internal:8789/}"
-      HERMES_HEALTH_URL: "${HERMES_HEALTH_URL:-http://host.docker.internal:8789/health}"
-      HERMES_ACTION_URL: "${HERMES_ACTION_URL:-http://host.docker.internal:8789/v1/chat/completions}"
-      HERMES_API_KEY: "${HERMES_API_KEY:-}"
     volumes:
       - openspace_data:/app/.openspace
       - ./logs:/app/logs
@@ -208,3 +224,4 @@ services:
 
 volumes:
   openspace_data:
+  openhuman_workspace:

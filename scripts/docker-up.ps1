@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     Run from any directory.  Handles first-time setup and incremental updates.
-    If OPENCLAW_OLLAMA_BASE_URL is set in .env, also sync that value into the
-    live OpenClaw gateway config before finishing.
+    If OPENHUMAN_RPC_TOKEN is blank or still set to the placeholder value in
+    .env, generate a local token before starting containers.
 
     Modes
     ------
@@ -100,58 +100,28 @@ function Set-EnvValue($key, $value) {
     Set-Content '.env' $content -NoNewline
 }
 
-function Sync-OpenClawOllamaBaseUrl() {
-    $baseUrl = Get-EnvValue 'OPENCLAW_OLLAMA_BASE_URL'
-    if (-not $baseUrl) {
-        return
-    }
-
-    $containerName = docker ps --filter "name=^/openclaw-openclaw-gateway-1$" --format "{{.Names}}" | Select-Object -First 1
-    if (-not $containerName) {
-        Write-Warning '[docker-up] OPENCLAW_OLLAMA_BASE_URL is set, but openclaw-openclaw-gateway-1 is not running. Skipping OpenClaw provider sync.'
-        return
-    }
-
-    $script = @'
-const fs = require("fs");
-const path = "/home/node/.openclaw/openclaw.json";
-const nextBaseUrl = process.env.OPENCLAW_OLLAMA_BASE_URL;
-if (!nextBaseUrl) {
-  console.log("missing");
-  process.exit(0);
+function New-RandomHexToken() {
+    $bytes = New-Object byte[] 32
+    [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+    return -join ($bytes | ForEach-Object { $_.ToString('x2') })
 }
 
-const data = JSON.parse(fs.readFileSync(path, "utf8"));
-data.models ??= {};
-data.models.providers ??= {};
-data.models.providers.ollama ??= {};
-
-const currentBaseUrl = data.models.providers.ollama.baseUrl || "";
-if (currentBaseUrl === nextBaseUrl) {
-  console.log(`unchanged:${currentBaseUrl}`);
-  process.exit(0);
-}
-
-data.models.providers.ollama.baseUrl = nextBaseUrl;
-fs.writeFileSync(path, JSON.stringify(data, null, 2));
-console.log(`updated:${currentBaseUrl}->${nextBaseUrl}`);
-'@
-
-    $result = docker exec -e OPENCLAW_OLLAMA_BASE_URL=$baseUrl $containerName node -e $script 2>&1
-    if (-not $?) {
-        Write-Warning "[docker-up] Failed to sync OpenClaw provider URL: $result"
-        return
+function Ensure-OpenHumanRpcToken() {
+    $current = Get-EnvValue 'OPENHUMAN_RPC_TOKEN'
+    if ($current -and $current -ne 'change-me-openhuman-rpc') {
+        return $current
     }
 
-    $resultText = [string]::Join("`n", $result)
-    if ($resultText -match '^updated:') {
-        Write-Host "[docker-up] Updated OpenClaw provider base URL to '$baseUrl'. Restarting openclaw-openclaw-gateway-1 ..."
-        docker restart $containerName | Out-Null
-    } elseif ($resultText -match '^unchanged:') {
-        Write-Host "[docker-up] OpenClaw provider base URL already matches '$baseUrl'."
+    $generated = New-RandomHexToken
+    Set-EnvValue 'OPENHUMAN_RPC_TOKEN' $generated
+
+    if ($current -eq 'change-me-openhuman-rpc') {
+        Write-Host '[docker-up] Replaced placeholder OPENHUMAN_RPC_TOKEN in .env.'
     } else {
-        Write-Host "[docker-up] OpenClaw provider sync result: $resultText"
+        Write-Host '[docker-up] Generated OPENHUMAN_RPC_TOKEN in .env.'
     }
+
+    return $generated
 }
 
 # ── Status only ───────────────────────────────────────────────────────────────
@@ -164,8 +134,10 @@ if ($Status) {
 if (-not (Test-Path '.env')) {
     Copy-Item '.env.example' '.env'
     Write-Host '[docker-up] Created .env from .env.example.'
-    Write-Host '[docker-up] Edit .env and set IRONCLAW_AUTH_TOKEN / GATEWAY_AUTH_TOKEN before first use.'
+    Write-Host '[docker-up] Edit .env for optional IronClaw and Hermes auth before first use.'
 }
+
+Ensure-OpenHumanRpcToken | Out-Null
 
 if ($ImageTag) {
     Set-EnvValue 'OPENSPACE_IMAGE_TAG' $ImageTag
@@ -236,12 +208,22 @@ if (-not $?) {
     exit 1
 }
 
-Sync-OpenClawOllamaBaseUrl
+$openhumanPublicUrl = Get-EnvValue 'OPENHUMAN_PUBLIC_URL'
+if (-not $openhumanPublicUrl) {
+    $openhumanPublicUrl = 'http://127.0.0.1:1420/'
+}
+
+$openhumanDebugPort = Get-EnvValue 'OPENHUMAN_DEBUG_PORT'
+if (-not $openhumanDebugPort) {
+    $openhumanDebugPort = '7181'
+}
 
 Write-Host ''
 Write-Host '[docker-up] Stack is up. Service URLs:'
 Write-Host '  Cubecloud dashboard   http://127.0.0.1:7788'
 Write-Host '  Agents monitor        http://127.0.0.1:5173'
+Write-Host "  OpenHuman UI          $openhumanPublicUrl"
+Write-Host "  OpenHuman debug       http://127.0.0.1:$openhumanDebugPort/health"
 Write-Host '  OpenSpace runtime MCP http://127.0.0.1:8788/mcp'
 Write-Host '  OpenSpace remote MCP  internal-only via openspace-remote-agent:8080/mcp'
 Write-Host ''

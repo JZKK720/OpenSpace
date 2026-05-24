@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 from flask import Flask, abort, jsonify, request, send_from_directory, url_for
 
-from openspace.external_agent_gateway import ExternalAgentGatewayError, get_external_agent_history, handoff_external_agent
-from openspace.external_agents import get_external_agent, get_external_agents_status
 from openspace.recording.action_recorder import analyze_agent_actions, load_agent_actions
 from openspace.recording.utils import load_recording_session
 from openspace.skill_engine import SkillStore
@@ -59,6 +61,27 @@ PIPELINE_STAGES = [
 ]
 
 _STORE: SkillStore | None = None
+_RUNTIME_MCP_URL_CACHE: str | None = None
+
+MCP_HEADERS = {
+    "Content-Type": "application/json",
+    "Accept": "application/json, text/event-stream",
+}
+
+
+class RuntimeMcpProxyError(Exception):
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int = 502,
+        details: Any = None,
+        retryable: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.details = details
+        self.retryable = retryable
 
 
 def create_app() -> Flask:
@@ -132,8 +155,16 @@ def create_app() -> Flask:
 
     @app.route(f"{API_PREFIX}/external-agents", methods=["GET"])
     def external_agents_status() -> Any:
-        items = get_external_agents_status()
-        return jsonify({"items": items, "count": len(items)})
+        try:
+            payload = _call_runtime_tool("list_external_agents")
+        except RuntimeMcpProxyError as exc:
+            return _runtime_proxy_error(exc)
+
+        items = payload.get("items") if isinstance(payload.get("items"), list) else []
+        count = payload.get("count")
+        if not isinstance(count, int):
+            count = len(items)
+        return jsonify({"items": items, "count": count})
 
     @app.route(f"{API_PREFIX}/external-agents/<agent_id>/handoff", methods=["POST"])
     def external_agent_handoff(agent_id: str) -> Any:
@@ -145,19 +176,20 @@ def create_app() -> Flask:
         if not prompt:
             return jsonify({"error": "prompt is required"}), 400
 
-        agent = get_external_agent(agent_id)
-        if not agent:
-            return jsonify({"error": f"Unknown external agent: {agent_id}"}), 404
-
         try:
-            result = handoff_external_agent(
-                agent,
-                prompt=prompt,
-                thread_id=thread_id,
-                timezone=timezone,
+            result = _call_runtime_tool(
+                "delegate_external_agent",
+                {
+                    "agent_id": agent_id,
+                    "prompt": prompt,
+                    "thread_id": thread_id or "",
+                    "timezone": timezone,
+                    "wait_for_completion": False,
+                },
+                timeout=120.0,
             )
-        except ExternalAgentGatewayError as exc:
-            return _external_agent_error(exc)
+        except RuntimeMcpProxyError as exc:
+            return _runtime_proxy_error(exc)
 
         return jsonify(result)
 
@@ -168,14 +200,18 @@ def create_app() -> Flask:
         if not thread_id:
             return jsonify({"error": "thread_id is required"}), 400
 
-        agent = get_external_agent(agent_id)
-        if not agent:
-            return jsonify({"error": f"Unknown external agent: {agent_id}"}), 404
-
         try:
-            result = get_external_agent_history(agent, thread_id=thread_id, limit=limit)
-        except ExternalAgentGatewayError as exc:
-            return _external_agent_error(exc)
+            result = _call_runtime_tool(
+                "get_external_agent_history",
+                {
+                    "agent_id": agent_id,
+                    "thread_id": thread_id,
+                    "limit": limit,
+                },
+                timeout=45.0,
+            )
+        except RuntimeMcpProxyError as exc:
+            return _runtime_proxy_error(exc)
 
         return jsonify(result)
 
@@ -352,11 +388,287 @@ def _str_arg(name: str, default: str) -> str:
     return request.args.get(name, default)
 
 
+def _runtime_mcp_candidate_urls() -> List[str]:
+    runtime_port = str(os.environ.get("OPENSPACE_RUNTIME_PORT") or "8788").strip() or "8788"
+    configured = str(os.environ.get("OPENSPACE_RUNTIME_MCP_URL") or "").strip()
+
+    candidates = [
+        configured,
+        "http://openspace-runtime:8080/mcp",
+        f"http://host.docker.internal:{runtime_port}/mcp",
+        f"http://127.0.0.1:{runtime_port}/mcp",
+    ]
+
+    ordered: List[str] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if candidate and candidate not in seen:
+            ordered.append(candidate)
+            seen.add(candidate)
+    return ordered
+
+
+def _call_runtime_tool(tool_name: str, arguments: Optional[Dict[str, Any]] = None, *, timeout: float = 30.0) -> Dict[str, Any]:
+    global _RUNTIME_MCP_URL_CACHE
+
+    last_error: RuntimeMcpProxyError | None = None
+    candidate_urls = []
+    if _RUNTIME_MCP_URL_CACHE:
+        candidate_urls.append(_RUNTIME_MCP_URL_CACHE)
+    for candidate in _runtime_mcp_candidate_urls():
+        if candidate not in candidate_urls:
+            candidate_urls.append(candidate)
+
+    for runtime_url in candidate_urls:
+        try:
+            _, session_id = _runtime_mcp_request(
+                runtime_url,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "openspace-dashboard", "version": "1.0"},
+                    },
+                },
+                timeout=min(timeout, 10.0),
+            )
+            response, _ = _runtime_mcp_request(
+                runtime_url,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": tool_name,
+                        "arguments": arguments or {},
+                    },
+                },
+                session_id=session_id,
+                timeout=timeout,
+            )
+            payload = _extract_runtime_tool_payload(response)
+            _RUNTIME_MCP_URL_CACHE = runtime_url
+            return payload
+        except RuntimeMcpProxyError as exc:
+            last_error = exc
+            if runtime_url == _RUNTIME_MCP_URL_CACHE:
+                _RUNTIME_MCP_URL_CACHE = None
+            if not exc.retryable:
+                raise
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeMcpProxyError("OpenSpace runtime MCP endpoint is unavailable", retryable=True)
+
+
+def _runtime_mcp_request(
+    runtime_url: str,
+    body: Dict[str, Any],
+    *,
+    session_id: str | None = None,
+    timeout: float = 15.0,
+) -> tuple[Dict[str, Any], str | None]:
+    headers = dict(MCP_HEADERS)
+    if session_id:
+        headers["mcp-session-id"] = session_id
+
+    request_obj = Request(
+        runtime_url,
+        data=json.dumps(body).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+
+    try:
+        with urlopen(request_obj, timeout=max(timeout, 1.0)) as response:
+            raw_text = response.read().decode("utf-8")
+            payload = _parse_runtime_mcp_response(raw_text, response.headers.get("content-type", ""))
+            error_text = _extract_runtime_mcp_error_text(payload)
+            if error_text:
+                raise _runtime_tool_error(error_text, details=payload)
+            next_session_id = response.headers.get("mcp-session-id") or session_id
+            return payload, next_session_id
+    except HTTPError as exc:
+        details = None
+        try:
+            details = exc.read().decode("utf-8")
+        except Exception:
+            details = None
+        raise RuntimeMcpProxyError(
+            f"OpenSpace runtime MCP request failed with HTTP {exc.code}",
+            status_code=502,
+            details=details,
+            retryable=exc.code in {404, 405, 502, 503, 504},
+        ) from exc
+    except URLError as exc:
+        raise RuntimeMcpProxyError(
+            f"OpenSpace runtime MCP endpoint is unavailable: {exc.reason}",
+            status_code=502,
+            retryable=True,
+        ) from exc
+    except TimeoutError as exc:
+        raise RuntimeMcpProxyError(
+            "OpenSpace runtime MCP request timed out",
+            status_code=504,
+            retryable=True,
+        ) from exc
+    except OSError as exc:
+        raise RuntimeMcpProxyError(
+            f"OpenSpace runtime MCP request failed: {exc}",
+            status_code=502,
+            retryable=True,
+        ) from exc
+
+
+def _parse_runtime_mcp_response(raw_text: str, content_type: str) -> Dict[str, Any]:
+    if "text/event-stream" in content_type:
+        for line in raw_text.splitlines():
+            if line.startswith("data:"):
+                payload_text = line[5:].strip()
+                if not payload_text:
+                    continue
+                try:
+                    parsed = json.loads(payload_text)
+                except json.JSONDecodeError as exc:
+                    raise RuntimeMcpProxyError(
+                        "OpenSpace runtime MCP returned invalid JSON data",
+                        details=payload_text[:500],
+                    ) from exc
+                if isinstance(parsed, dict):
+                    return parsed
+                break
+        raise RuntimeMcpProxyError("OpenSpace runtime MCP returned no data event")
+
+    try:
+        parsed = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeMcpProxyError(
+            "OpenSpace runtime MCP returned invalid JSON",
+            details=raw_text[:500],
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise RuntimeMcpProxyError(
+            "OpenSpace runtime MCP returned an unexpected response payload",
+            details=parsed,
+        )
+    return parsed
+
+
+def _extract_runtime_tool_payload(response: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(response, dict):
+        raise RuntimeMcpProxyError("OpenSpace runtime MCP returned an unexpected tool payload", details=response)
+
+    error_text = _extract_runtime_mcp_error_text(response)
+    if error_text:
+        raise _runtime_tool_error(error_text, details=response)
+
+    result = response.get("result")
+    if not isinstance(result, dict):
+        raise RuntimeMcpProxyError("OpenSpace runtime MCP tool call returned no result payload", details=response)
+
+    content = result.get("content")
+    if not isinstance(content, list) or not content:
+        raise RuntimeMcpProxyError("OpenSpace runtime MCP tool call returned no content", details=result)
+
+    first_item = content[0]
+    if not isinstance(first_item, dict):
+        raise RuntimeMcpProxyError("OpenSpace runtime MCP tool call returned malformed content", details=content)
+
+    text = str(first_item.get("text") or "").strip()
+    if not text:
+        raise RuntimeMcpProxyError("OpenSpace runtime MCP tool call returned empty content", details=first_item)
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeMcpProxyError(
+            "OpenSpace runtime MCP tool call returned invalid JSON",
+            details=text[:500],
+        ) from exc
+
+    if not isinstance(payload, dict):
+        raise RuntimeMcpProxyError(
+            "OpenSpace runtime MCP tool call returned an unexpected payload type",
+            details=payload,
+        )
+
+    tool_error = payload.get("error")
+    if tool_error:
+        raise _runtime_tool_error(str(tool_error), details=payload)
+
+    return payload
+
+
+def _extract_runtime_mcp_error_text(response: Dict[str, Any]) -> str | None:
+    error = response.get("error")
+    if error is not None:
+        if isinstance(error, dict):
+            return str(error.get("message") or json.dumps(error))
+        return str(error)
+
+    result = response.get("result")
+    if not isinstance(result, dict):
+        return None
+
+    content = result.get("content")
+    if not isinstance(content, list) or not content:
+        return None
+
+    first_item = content[0]
+    if not isinstance(first_item, dict):
+        return None
+
+    text = str(first_item.get("text") or "").strip()
+    if not text:
+        return None
+
+    if bool(result.get("isError")):
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return text
+
+        if isinstance(parsed, dict) and parsed.get("error") is not None:
+            return str(parsed.get("error"))
+        return text
+
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+    if isinstance(parsed, dict) and parsed.get("error") is not None:
+        return str(parsed.get("error"))
+    return None
+
+
+def _runtime_tool_error(message: str, *, details: Any = None) -> RuntimeMcpProxyError:
+    cleaned = str(message or "").strip() or "External agent runtime proxy failed"
+    prefix = "Error executing tool "
+    if cleaned.startswith(prefix) and ":" in cleaned:
+        cleaned = cleaned.split(":", 1)[1].strip() or cleaned
+    lowered = cleaned.lower()
+
+    if "unknown external agent" in lowered:
+        status_code = 404
+    elif "prompt is required" in lowered or "thread_id is required" in lowered:
+        status_code = 400
+    elif "not ready" in lowered or "unavailable" in lowered or "timed out" in lowered:
+        status_code = 503
+    else:
+        status_code = 502
+
+    return RuntimeMcpProxyError(cleaned, status_code=status_code, details=details, retryable=False)
+
+
 def _skill_score(record: SkillRecord) -> float:
     return round(record.effective_rate * 100, 1)
 
 
-def _external_agent_error(exc: ExternalAgentGatewayError) -> Any:
+def _runtime_proxy_error(exc: RuntimeMcpProxyError) -> Any:
     payload: Dict[str, Any] = {"error": str(exc)}
     if exc.details is not None:
         payload["details"] = exc.details

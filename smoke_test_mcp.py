@@ -3,12 +3,12 @@ Smoke test for OpenSpace MCP streamable-http integration.
 
 Level 1: Direct MCP protocol (initialize + tools/list + tools/call search_skills)
 Level 2: IronClaw chat-thread integration (health + thread/new + chat/send)
-Level 3: OpenClaw gateway integration (/health + /v1/chat/completions + OpenSpace adapter history)
+Level 3: OpenHuman JSON-RPC integration (/health + core.ping + openhuman.inference_status + openhuman.inference_prompt)
 
 Usage:
     python smoke_test_mcp.py
     python smoke_test_mcp.py --level 2 --ironclaw-token <token>
-    python smoke_test_mcp.py --level 3 --ironclaw-token <token> --openclaw-token <token>
+    python smoke_test_mcp.py --level 3 --ironclaw-token <token> --openhuman-token <token>
 """
 
 import argparse
@@ -17,11 +17,16 @@ import sys
 
 import httpx
 
-from openspace.external_agent_gateway import get_external_agent_history, handoff_external_agent
+from openspace.external_agent_gateway import handoff_external_agent
+from openspace.openhuman_rpc_gateway import (
+    get_openhuman_inference_status,
+    ping_openhuman_core,
+    submit_openhuman_inference_prompt,
+)
 
 MCP_URL = "http://127.0.0.1:8788/mcp"
 IC_URL = "http://127.0.0.1:3231"
-OC_URL = "http://127.0.0.1:18788"
+OH_URL = "http://127.0.0.1:7181"
 
 MCP_HEADERS = {
     "Content-Type": "application/json",
@@ -198,79 +203,79 @@ def run_level2(token: str):
 
 def run_level3(token: str):
     ok = True
-    print("\n=== Level 3: OpenClaw gateway integration ===")
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    print("\n=== Level 3: OpenHuman JSON-RPC integration ===")
 
     with httpx.Client(timeout=120) as client:
         try:
-            r = client.get(f"{OC_URL}/health")
+            r = client.get(f"{OH_URL}/health")
             r.raise_for_status()
-            print(f"  {PASS} OpenClaw health reachable  status={r.status_code}")
+            print(f"  {PASS} OpenHuman health reachable  status={r.status_code}")
         except Exception as e:
-            print(f"  {FAIL} OpenClaw health failed: {e}")
+            print(f"  {FAIL} OpenHuman health failed: {e}")
             return False
 
         try:
-            payload = {
-                "model": "openclaw/default",
-                "messages": [{"role": "user", "content": "Reply with exactly: pong"}],
-            }
-            r = client.post(f"{OC_URL}/v1/chat/completions", headers=headers, json=payload)
-            r.raise_for_status()
-            body = r.json()
-            reply = (
-                body.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-                .strip()
-            )
-            if reply != "pong":
-                print(f"  {FAIL} /v1/chat/completions returned unexpected reply: {reply!r}")
+            ping = ping_openhuman_core(f"{OH_URL}/rpc", auth_token=token)
+            if not ping.get("ok"):
+                print(f"  {FAIL} core.ping returned unexpected payload: {ping!r}")
                 ok = False
             else:
-                print(f"  {PASS} /v1/chat/completions  reply={reply!r}")
+                print(f"  {PASS} core.ping  ok={ping['ok']!r}")
         except Exception as e:
-            print(f"  {FAIL} /v1/chat/completions failed: {e}")
+            print(f"  {FAIL} core.ping failed: {e}")
+            ok = False
+
+        try:
+            status = get_openhuman_inference_status(f"{OH_URL}/rpc", auth_token=token)
+            state = str(status.get("state") or "")
+            if state != "ready":
+                print(f"  {FAIL} openhuman.inference_status returned state={state!r}")
+                ok = False
+            else:
+                print(f"  {PASS} openhuman.inference_status  state={state!r}  provider={status.get('provider')!r}")
+        except Exception as e:
+            print(f"  {FAIL} openhuman.inference_status failed: {e}")
+            ok = False
+
+        try:
+            prompt_result = submit_openhuman_inference_prompt(
+                f"{OH_URL}/rpc",
+                prompt="Reply with exactly: pong",
+                auth_token=token,
+                max_tokens=64,
+                no_think=True,
+            )
+            reply = str(prompt_result.get("response") or "").strip()
+            if reply != "pong":
+                print(f"  {FAIL} openhuman.inference_prompt returned unexpected reply: {reply!r}")
+                ok = False
+            else:
+                print(f"  {PASS} openhuman.inference_prompt  reply={reply!r}")
+        except Exception as e:
+            print(f"  {FAIL} openhuman.inference_prompt failed: {e}")
             ok = False
 
         try:
             agent = {
-                "id": "openclaw",
-                "protocol": "openclaw-gateway",
-                "capabilities": ["handoff", "history"],
-                "actionUrl": f"{OC_URL}/v1/chat/completions",
+                "id": "openhuman",
+                "protocol": "openhuman-rpc",
+                "capabilities": ["handoff"],
+                "actionUrl": f"{OH_URL}/rpc",
                 "_actionAuthToken": token,
-                "model": "openclaw/default",
             }
             result = handoff_external_agent(
                 agent,
                 prompt="Reply with exactly: pong",
             )
-            thread_id = str(result.get("threadId") or "")
             latest_turn = result.get("latestTurn") or {}
             mirrored_reply = str(latest_turn.get("response") or "").strip()
-            if not thread_id:
-                print("  {FAIL} OpenSpace adapter handoff returned no thread id")
-                ok = False
-            elif mirrored_reply != "pong":
+            if mirrored_reply != "pong":
                 print(f"  {FAIL} OpenSpace adapter handoff returned unexpected reply: {mirrored_reply!r}")
                 ok = False
             else:
-                print(f"  {PASS} openclaw-gateway handoff  thread_id={thread_id!r}  reply={mirrored_reply!r}")
-
-            history = get_external_agent_history(agent, thread_id=thread_id, limit=5)
-            history_turns = history.get("turns") or []
-            history_reply = str((history.get("latestTurn") or {}).get("response") or "").strip()
-            if not history_turns:
-                print("  {FAIL} openclaw-gateway history returned no turns")
-                ok = False
-            elif history_reply != "pong":
-                print(f"  {FAIL} openclaw-gateway history returned unexpected reply: {history_reply!r}")
-                ok = False
-            else:
-                print(f"  {PASS} openclaw-gateway history  turns={len(history_turns)}  latest={history_reply!r}")
+                print(f"  {PASS} openhuman-rpc handoff  reply={mirrored_reply!r}")
         except Exception as e:
-            print(f"  {FAIL} OpenSpace OpenClaw adapter failed: {e}")
+            print(f"  {FAIL} OpenSpace OpenHuman adapter failed: {e}")
             ok = False
 
     return ok
@@ -280,7 +285,7 @@ def main():
     parser = argparse.ArgumentParser(description="OpenSpace MCP smoke test")
     parser.add_argument("--level", type=int, choices=[1, 2, 3], default=1)
     parser.add_argument("--ironclaw-token", default=None, help="IronClaw auth token for level 2")
-    parser.add_argument("--openclaw-token", default=None, help="OpenClaw auth token for level 3")
+    parser.add_argument("--openhuman-token", default=None, help="OpenHuman auth token for level 3")
     args = parser.parse_args()
 
     passed = True
@@ -291,10 +296,10 @@ def main():
         else:
             passed = run_level2(args.ironclaw_token) and passed
     if args.level >= 3:
-        if not args.openclaw_token:
-            print("\n[!] Pass --openclaw-token for level 3")
+        if not args.openhuman_token:
+            print("\n[!] Pass --openhuman-token for level 3")
         else:
-            passed = run_level3(args.openclaw_token) and passed
+            passed = run_level3(args.openhuman_token) and passed
 
     print()
     if passed:

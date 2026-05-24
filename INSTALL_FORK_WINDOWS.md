@@ -91,6 +91,8 @@ docker compose ps
 |---|---|
 | Cubecloud dashboard | `http://127.0.0.1:7788` |
 | Agents monitor | `http://127.0.0.1:5173` |
+| OpenHuman UI | `http://127.0.0.1:1420/` |
+| OpenHuman debug health | `http://127.0.0.1:7181/health` |
 | OpenSpace runtime MCP | `http://127.0.0.1:8788/mcp` |
 | OpenSpace remote MCP | internal-only via `openspace-remote-agent:8080/mcp` |
 
@@ -117,17 +119,15 @@ IRONCLAW_AUTH_TOKEN=your_token_here
 GATEWAY_AUTH_TOKEN=your_token_here
 ```
 
-**OpenClaw** (OpenAI-compatible gateway, port 18788) and **Hermes** (OpenAI-compat, port 8789) have working defaults in `.env.example`. Override only if your deployments use different hosts or ports:
+**OpenHuman** (browser-facing UI on 1420, internal JSON-RPC worker plus optional host-local debug port on 7181) and **Hermes** (OpenAI-compat, port 8789) have working defaults in `.env.example`. Override only if your deployments use different hosts or ports:
 
 ```dotenv
-# OpenClaw — only needed if not running on default port 18788 or if you need to set the gateway token
-OPENCLAW_INTERNAL_URL=http://host.docker.internal:18788/
-OPENCLAW_ACTION_URL=http://host.docker.internal:18788/v1/chat/completions
-OPENCLAW_AUTH_TOKEN=your_openclaw_gateway_token
-
-# Optional: if OpenClaw itself uses host Ollama and host.docker.internal is flaky,
-# docker-up.ps1 will write this into /home/node/.openclaw/openclaw.json and restart the gateway.
-OPENCLAW_OLLAMA_BASE_URL=http://192.168.65.254:11434
+# OpenHuman — only needed if you want to override the default service name, debug port, or bearer token
+OPENHUMAN_PUBLIC_URL=http://127.0.0.1:1420/
+OPENHUMAN_INTERNAL_URL=http://openhuman:7788/
+OPENHUMAN_ACTION_URL=http://openhuman:7788/rpc
+OPENHUMAN_RPC_TOKEN=your_openhuman_rpc_token
+OPENHUMAN_DEBUG_PORT=7181
 
 # Hermes — only needed if not running on default port 8789
 HERMES_PUBLIC_URL=http://127.0.0.1:9119/
@@ -139,7 +139,9 @@ HERMES_API_KEY=your_key_if_required
 AIONUI_PUBLIC_URL=http://127.0.0.1:3308/
 ```
 
-`HERMES_PUBLIC_URL` is the dashboard/browser link for the Hermes UI on port `9119`; the actual OpenAI-compatible API that OpenSpace calls stays on port `8789`.
+`OPENHUMAN_PUBLIC_URL` is the dashboard/browser link for the OpenHuman UI on port `1420`; the internal worker that OpenSpace calls stays on `http://openhuman:7788/rpc`, and `OPENHUMAN_DEBUG_PORT` remains the optional host-local debug mirror. `HERMES_PUBLIC_URL` is the dashboard/browser link for the Hermes UI on port `9119`; the actual OpenAI-compatible API that OpenSpace calls stays on port `8789`.
+
+Dashboard external-agent handoff and history now proxy through the runtime MCP endpoint, so agent auth tokens stay in the runtime container. If you run `openspace-dashboard` outside Docker, set `OPENSPACE_RUNTIME_MCP_URL=http://127.0.0.1:8788/mcp` in that shell before starting the dashboard server.
 
 Set `AIONUI_WORKFLOWS_SOURCE_DIR` in the repo-root `.env` and run `python sync_aionui_workflows.py` if you want AionUi workflows to appear in the Workflows page. The source can be an exported workflow folder, an exported conversation JSON file/folder, or the live AionUi data directory / `aionui.db`.
 
@@ -167,7 +169,7 @@ For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps
 
 Expected dashboard registry results:
 
-- external agents: `ironclaw`, `openclaw`, `hermes`
+- external agents: `ironclaw`, `openhuman`, `hermes`
 - standalone apps are driven by `openspace/config/standalone_apps.json` and may include `my-daily-monitor`, `open-design`, `aionui`, and other configured entries
 
 ## Optional: Local Non-Docker Build

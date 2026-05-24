@@ -17,6 +17,11 @@ from openspace.chat_thread_gateway import (
     submit_chat_thread_handoff,
 )
 from openspace import nanobot_gateway as _nanobot
+from openspace.openhuman_rpc_gateway import (
+    OpenHumanRpcGatewayError,
+    get_openhuman_inference_status,
+    submit_openhuman_inference_prompt,
+)
 
 
 class ExternalAgentGatewayError(RuntimeError):
@@ -568,12 +573,114 @@ class OpenAICompatAdapter(ExternalAgentAdapter):
         )
 
 
+class OpenHumanRpcAdapter(ExternalAgentAdapter):
+    protocol_ids = ("openhuman-rpc",)
+
+    def handoff(
+        self,
+        agent: Dict[str, Any],
+        *,
+        prompt: str,
+        thread_id: str | None = None,
+        timezone: str = "UTC",
+        history_limit: int = 10,
+    ) -> Dict[str, Any]:
+        action_url = str(agent.get("actionUrl") or "").strip()
+        if not action_url:
+            raise ExternalAgentGatewayError(
+                f"External agent '{agent.get('id')}' action URL is not configured",
+                status_code=400,
+            )
+
+        auth_token = str(agent.get("_actionAuthToken") or "").strip() or None
+        headers = _headers(agent.get("_actionHeaders"))
+        try:
+            status = get_openhuman_inference_status(
+                action_url,
+                auth_token=auth_token,
+                headers=headers,
+                timeout=_coerce_positive_float(agent.get("statusTimeoutSeconds"), default=20.0),
+            )
+        except OpenHumanRpcGatewayError as exc:
+            raise ExternalAgentGatewayError(
+                str(exc),
+                status_code=exc.status_code,
+                details=exc.details,
+            ) from exc
+
+        state = str(status.get("state") or "").strip().lower()
+        if state != "ready":
+            raise ExternalAgentGatewayError(
+                f"OpenHuman inference runtime is not ready (state: {state or 'unknown'})",
+                status_code=503,
+                details=status,
+            )
+
+        try:
+            prompt_result = submit_openhuman_inference_prompt(
+                action_url,
+                prompt=prompt,
+                auth_token=auth_token,
+                headers=headers,
+                max_tokens=_coerce_positive_int(
+                    agent.get("maxTokens") if agent.get("maxTokens") is not None else agent.get("max_tokens"),
+                    default=512,
+                ),
+                no_think=_coerce_bool(
+                    agent.get("noThink") if agent.get("noThink") is not None else agent.get("no_think"),
+                    default=True,
+                ),
+                timeout=_coerce_positive_float(agent.get("promptTimeoutSeconds"), default=120.0),
+            )
+        except OpenHumanRpcGatewayError as exc:
+            raise ExternalAgentGatewayError(
+                str(exc),
+                status_code=exc.status_code,
+                details=exc.details,
+            ) from exc
+
+        latest_turn = {
+            "turn_number": 1,
+            "user_input": prompt,
+            "response": prompt_result.get("response") or "",
+            "state": "completed",
+            "started_at": None,
+            "completed_at": None,
+            "tool_calls": [],
+        }
+
+        return {
+            "agentId": str(agent.get("id") or "openhuman"),
+            "threadId": "",
+            "threadCreated": False,
+            "messageId": str(prompt_result.get("requestId") or ""),
+            "status": "completed",
+            "actionUrl": action_url,
+            "hasMore": False,
+            "turns": [latest_turn],
+            "latestTurn": latest_turn,
+        }
+
+    def history(
+        self,
+        agent: Dict[str, Any],
+        *,
+        thread_id: str,
+        limit: int = 10,
+    ) -> Dict[str, Any]:
+        raise ExternalAgentGatewayError(
+            f"External agent '{agent.get('id')}' (openhuman-rpc) does not support history retrieval",
+            status_code=400,
+        )
+
+
 _ADAPTERS: List[ExternalAgentAdapter] = [
     ChatThreadAdapter(),
     HttpJsonAdapter(),
     NanobotAdapter(),
     OpenClawGatewayAdapter(),
     OpenAICompatAdapter(),
+    OpenHumanRpcAdapter(),
 ]
 
 
@@ -741,6 +848,35 @@ def _field_map(raw: Any) -> Dict[str, str]:
         for key, value in raw.items()
         if str(key).strip() and value is not None and str(value).strip()
     }
+
+
+def _coerce_positive_int(value: Any, *, default: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
+def _coerce_positive_float(value: Any, *, default: float) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
+def _coerce_bool(value: Any, *, default: bool) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
 
 
 def _headers(raw: Any) -> Dict[str, str] | None:

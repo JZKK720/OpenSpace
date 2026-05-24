@@ -76,6 +76,12 @@ function Check-Command($name) {
     }
 }
 
+function New-RandomHexToken() {
+    $bytes = New-Object byte[] 32
+    [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+    return -join ($bytes | ForEach-Object { $_.ToString('x2') })
+}
+
 function Write-Step($msg) { Write-Host "`n[install] $msg" -ForegroundColor Cyan }
 function Write-OK($msg)   { Write-Host "  OK  $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "  WARN $msg" -ForegroundColor Yellow }
@@ -183,6 +189,43 @@ function Set-EnvValue($key, $value) {
 }
 
 # Prompt for IRONCLAW_AUTH_TOKEN if blank
+$openhumanPublicUrl = Get-EnvValue 'OPENHUMAN_PUBLIC_URL'
+if (-not $openhumanPublicUrl) {
+    Write-OK 'OPENHUMAN_PUBLIC_URL: http://127.0.0.1:1420/ (default browser UI)'
+} else {
+    Write-OK "OPENHUMAN_PUBLIC_URL: $openhumanPublicUrl"
+}
+
+$openhumanUrl = Get-EnvValue 'OPENHUMAN_INTERNAL_URL'
+if (-not $openhumanUrl) {
+    Write-Warn "OPENHUMAN_INTERNAL_URL not found in .env — OpenHuman defaults will be used (http://openhuman:7788/)."
+} else {
+    Write-OK "OPENHUMAN_INTERNAL_URL: $openhumanUrl"
+}
+
+$openhumanActionUrl = Get-EnvValue 'OPENHUMAN_ACTION_URL'
+if (-not $openhumanActionUrl) {
+    Write-Warn "OPENHUMAN_ACTION_URL not found in .env — OpenHuman defaults will be used (/rpc on the internal worker)."
+} else {
+    Write-OK "OPENHUMAN_ACTION_URL: $openhumanActionUrl"
+}
+
+$openhumanToken = Get-EnvValue 'OPENHUMAN_RPC_TOKEN'
+if (-not $openhumanToken -or $openhumanToken -eq 'change-me-openhuman-rpc') {
+    $openhumanToken = New-RandomHexToken
+    Set-EnvValue 'OPENHUMAN_RPC_TOKEN' $openhumanToken
+    Write-OK 'Generated OPENHUMAN_RPC_TOKEN for internal OpenHuman handoff.'
+} else {
+    Write-OK 'OPENHUMAN_RPC_TOKEN set.'
+}
+
+$openhumanDebugPort = Get-EnvValue 'OPENHUMAN_DEBUG_PORT'
+if (-not $openhumanDebugPort) {
+    Write-OK 'OPENHUMAN_DEBUG_PORT: 7181 (default)'
+} else {
+    Write-OK "OPENHUMAN_DEBUG_PORT: $openhumanDebugPort"
+}
+
 $ironToken = Get-EnvValue 'IRONCLAW_AUTH_TOKEN'
 if (-not $ironToken) {
     Write-Host ""
@@ -197,28 +240,6 @@ if (-not $ironToken) {
     }
 } else {
     Write-OK "IRONCLAW_AUTH_TOKEN already set."
-}
-
-# Optional: OpenClaw URL/token
-$openclawUrl = Get-EnvValue 'OPENCLAW_INTERNAL_URL'
-if (-not $openclawUrl) {
-    Write-Warn "OPENCLAW_INTERNAL_URL not found in .env — OpenClaw defaults will be used (port 18788)."
-} else {
-    Write-OK "OPENCLAW_INTERNAL_URL: $openclawUrl"
-}
-
-$openclawToken = Get-EnvValue 'OPENCLAW_AUTH_TOKEN'
-if (-not $openclawToken) {
-    Write-Warn "OPENCLAW_AUTH_TOKEN is blank — OpenClaw handoff will not work until it is set."
-} else {
-    Write-OK "OPENCLAW_AUTH_TOKEN set."
-}
-
-$openclawOllamaBaseUrl = Get-EnvValue 'OPENCLAW_OLLAMA_BASE_URL'
-if (-not $openclawOllamaBaseUrl) {
-    Write-Warn "OPENCLAW_OLLAMA_BASE_URL is blank — OpenClaw will keep its own provider baseUrl. Set this if host.docker.internal:11434 is unreliable from the OpenClaw container."
-} else {
-    Write-OK "OPENCLAW_OLLAMA_BASE_URL: $openclawOllamaBaseUrl"
 }
 
 # Optional: Hermes API key
@@ -357,6 +378,12 @@ if ($SkipDocker) {
     Test-Endpoint "External agents registry" "http://127.0.0.1:7788/api/v1/external-agents"
     Test-Endpoint "Standalone apps registry" "http://127.0.0.1:7788/api/v1/standalone-apps"
     Test-Endpoint "Runtime MCP"              "http://127.0.0.1:8788/mcp"
+
+    if ($openhumanToken) {
+        Test-HandoffProbe "OpenHuman handoff" "openhuman" "Reply with exactly pong" 90
+    } else {
+        Write-Warn "OpenHuman handoff probe skipped — OPENHUMAN_RPC_TOKEN is blank."
+    }
 
     if ($ironToken) {
         Test-HandoffProbe "IronClaw handoff" "ironclaw" "Reply with exactly pong" 45
