@@ -3,7 +3,7 @@ Smoke test for OpenSpace MCP streamable-http integration.
 
 Level 1: Direct MCP protocol (initialize + tools/list + tools/call search_skills)
 Level 2: IronClaw chat-thread integration (health + thread/new + chat/send)
-Level 3: OpenHuman JSON-RPC integration (/health + core.ping + openhuman.inference_status + openhuman.inference_prompt)
+Level 3: OpenHuman JSON-RPC integration (/health + core.ping + core.version + openhuman.inference_status + openhuman.inference_prompt + config.get_client_config + config.get_runtime_flags + config.agent_server_status + openhuman-rpc handoff)
 
 Usage:
     python smoke_test_mcp.py
@@ -19,7 +19,11 @@ import httpx
 
 from openspace.external_agent_gateway import handoff_external_agent
 from openspace.openhuman_rpc_gateway import (
+    get_openhuman_agent_server_status,
+    get_openhuman_client_config,
     get_openhuman_inference_status,
+    get_openhuman_runtime_flags,
+    get_openhuman_version,
     ping_openhuman_core,
     submit_openhuman_inference_prompt,
 )
@@ -277,6 +281,66 @@ def run_level3(token: str):
         except Exception as e:
             print(f"  {FAIL} OpenSpace OpenHuman adapter failed: {e}")
             ok = False
+
+        # ── config surfaces ───────────────────────────────────────────────────
+        try:
+            ver_result = get_openhuman_version(f"{OH_URL}/rpc", auth_token=token)
+            ver = ver_result.get("version", "")
+            if not ver:
+                print(f"  {FAIL} core.version returned empty string")
+                ok = False
+            else:
+                print(f"  {PASS} core.version  version={ver!r}")
+        except Exception as e:
+            print(f"  {FAIL} core.version failed: {e}")
+            ok = False
+
+        try:
+            cfg = get_openhuman_client_config(f"{OH_URL}/rpc", auth_token=token)
+            if not isinstance(cfg, dict):
+                print(f"  {FAIL} config.get_client_config returned non-dict: {cfg!r}")
+                ok = False
+            else:
+                key_set = cfg.get("api_key_set")
+                print(f"  {PASS} config.get_client_config  api_key_set={key_set!r}  keys={sorted(cfg.keys())}")
+        except Exception as e:
+            msg = str(e)
+            if "unknown method" in msg.lower():
+                print(f"  ~ config.get_client_config not available on this build  ({msg})")
+            else:
+                print(f"  {FAIL} config.get_client_config failed: {e}")
+                ok = False
+
+        try:
+            flags = get_openhuman_runtime_flags(f"{OH_URL}/rpc", auth_token=token)
+            if not isinstance(flags, dict):
+                print(f"  {FAIL} config.get_runtime_flags returned non-dict: {flags!r}")
+                ok = False
+            else:
+                print(f"  {PASS} config.get_runtime_flags  keys={sorted(flags.keys())}")
+        except Exception as e:
+            msg = str(e)
+            if "unknown method" in msg.lower():
+                print(f"  ~ config.get_runtime_flags not available on this build  ({msg})")
+            else:
+                print(f"  {FAIL} config.get_runtime_flags failed: {e}")
+                ok = False
+
+        try:
+            srv = get_openhuman_agent_server_status(f"{OH_URL}/rpc", auth_token=token)
+            if not isinstance(srv, dict):
+                print(f"  {FAIL} config.agent_server_status returned non-dict: {srv!r}")
+                ok = False
+            else:
+                running = srv.get("running")
+                print(f"  {PASS} config.agent_server_status  running={running!r}  keys={sorted(srv.keys())}")
+        except Exception as e:
+            msg = str(e)
+            if "unknown method" in msg.lower():
+                print(f"  ~ config.agent_server_status not available on this build  ({msg})")
+            else:
+                print(f"  {FAIL} config.agent_server_status failed: {e}")
+                ok = False
 
     return ok
 
