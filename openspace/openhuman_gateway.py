@@ -5,9 +5,15 @@ from typing import Any, Dict
 
 from openspace.openhuman_rpc_gateway import (
     OpenHumanRpcGatewayError,
+    get_openhuman_agent_server_status,
+    get_openhuman_client_config,
     get_openhuman_inference_status,
+    get_openhuman_runtime_flags,
+    get_openhuman_version,
     ping_openhuman_core,
     submit_openhuman_inference_prompt,
+    update_openhuman_local_ai_settings,
+    update_openhuman_model_settings,
 )
 
 _DEFAULT_RPC_URL = "http://openhuman:7788/rpc"
@@ -73,3 +79,63 @@ def inference_prompt(prompt: str, max_tokens: int = 512, no_think: bool = True) 
 def inference_chat() -> None:
     # TODO: implement after inference_prompt path is stable
     raise NotImplementedError("inference_chat is not yet implemented")
+
+
+def client_config() -> Dict[str, Any]:
+    """Call config.get_client_config. Returns the config dict (api_key_set is bool, never raw key)."""
+    return get_openhuman_client_config(
+        _rpc_url(),
+        auth_token=_auth_token(),
+        timeout=_timeout_seconds(),
+    )
+
+
+def runtime_flags() -> Dict[str, Any]:
+    """Call config.get_runtime_flags. Returns the runtime flags dict."""
+    return get_openhuman_runtime_flags(
+        _rpc_url(),
+        auth_token=_auth_token(),
+        timeout=_timeout_seconds(),
+    )
+
+
+def agent_server_status() -> Dict[str, Any]:
+    """Call config.agent_server_status. Returns the agent server status dict."""
+    return get_openhuman_agent_server_status(
+        _rpc_url(),
+        auth_token=_auth_token(),
+        timeout=_timeout_seconds(),
+    )
+
+
+def update_local_ai(patch: Dict[str, Any]) -> Dict[str, Any]:
+    """Call config.update_local_ai_settings with the given patch dict."""
+    return update_openhuman_local_ai_settings(
+        _rpc_url(),
+        patch=patch,
+        auth_token=_auth_token(),
+        timeout=_timeout_seconds(),
+    )
+
+
+def update_model_settings(patch: Dict[str, Any]) -> Dict[str, Any]:
+    """Call config.update_model_settings with the given patch dict.
+
+    api_key is write-only: it is forwarded to OpenHuman but never echoed or logged.
+    """
+    return update_openhuman_model_settings(
+        _rpc_url(),
+        patch=patch,
+        auth_token=_auth_token(),
+        timeout=_timeout_seconds(),
+    )
+
+
+def version() -> str:
+    """Call core.version. Returns the version string."""
+    result = get_openhuman_version(
+        _rpc_url(),
+        auth_token=_auth_token(),
+        timeout=_timeout_seconds(),
+    )
+    return result.get("version", "")

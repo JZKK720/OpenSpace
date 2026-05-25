@@ -121,7 +121,7 @@ def _is_chat_thread_protocol(protocol: str) -> bool:
 
 
 def _is_thread_history_protocol(protocol: str) -> bool:
-    return _is_chat_thread_protocol(protocol) or protocol == "openclaw-gateway"
+    return _is_chat_thread_protocol(protocol)
 
 
 def _build_mcp_server_name(agent_id: str) -> str:

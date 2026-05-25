@@ -15,7 +15,6 @@ Internal / legacy re-exports (prefer the generic names above):
 Supported host agents:
 
   - **nanobot** — ``~/.nanobot/config.json``  (``tools.mcpServers.openspace.env``)
-  - **openclaw** — ``~/.openclaw/openclaw.json``  (``skills.entries.openspace.env``)
 """
 
 import logging
@@ -31,12 +30,6 @@ from openspace.host_detection.nanobot import (
     read_nanobot_mcp_env,
     try_read_nanobot_config,
 )
-from openspace.host_detection.openclaw import (
-    get_openclaw_openai_api_key as _openclaw_get_openai_api_key,
-    is_openclaw_host,
-    read_openclaw_skill_env,
-    try_read_openclaw_config,
-)
 
 logger = logging.getLogger("openspace.host_detection")
 
@@ -46,21 +39,13 @@ def read_host_mcp_env() -> Dict[str, str]:
 
     Resolution order:
       1. nanobot — ``tools.mcpServers.openspace.env``
-      2. openclaw — ``skills.entries.openspace.env``
-      3. Empty dict (no host detected)
+      2. Empty dict (no host detected)
 
     Callers (e.g. ``cloud.auth``) use this single entry point and never
     need to know which host agent is active.
     """
-    # Try nanobot first (most common deployment)
     env = read_nanobot_mcp_env()
     if env:
-        return env
-
-    # Try openclaw
-    env = read_openclaw_skill_env("openspace")
-    if env:
-        logger.debug("read_host_mcp_env: resolved from OpenClaw config")
         return env
 
     return {}
@@ -72,14 +57,9 @@ def get_openai_api_key() -> Optional[str]:
     Resolution:
       1. ``OPENAI_API_KEY`` env var  (checked inside nanobot reader)
       2. nanobot config ``providers.openai.apiKey``
-      3. openclaw config ``skills.entries.openspace.env.OPENAI_API_KEY``
-      4. None
+      3. None
     """
-    # nanobot reader already checks OPENAI_API_KEY env var first
-    key = _nanobot_get_openai_api_key()
-    if key:
-        return key
-    return _openclaw_get_openai_api_key()
+    return _nanobot_get_openai_api_key()
 
 
 __all__ = [
@@ -90,7 +70,4 @@ __all__ = [
     "read_host_mcp_env",
     "read_nanobot_mcp_env",
     "try_read_nanobot_config",
-    "is_openclaw_host",
-    "read_openclaw_skill_env",
-    "try_read_openclaw_config",
 ]

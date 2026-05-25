@@ -175,11 +175,6 @@ def build_llm_kwargs(model: str) -> tuple[str, Dict[str, Any]]:
         host_config = try_read_nanobot_config(model)
         if host_config:
             host_source = "nanobot config"
-        else:
-            from openspace.host_detection.openclaw import try_read_openclaw_config
-            host_config = try_read_openclaw_config(model)
-            if host_config:
-                host_source = "openclaw config"
 
     if host_config:
         host_model = host_config.pop("_model", None)

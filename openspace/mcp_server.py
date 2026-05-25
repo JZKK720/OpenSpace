@@ -433,10 +433,7 @@ async def _do_import_cloud_skill(skill_id: str, target_dir: Optional[str] = None
     if target_dir:
         base_dir = Path(target_dir)
     else:
-        host_ws = (
-            os.environ.get("NANOBOT_WORKSPACE")
-            or os.environ.get("OPENCLAW_STATE_DIR")
-        )
+        host_ws = os.environ.get("NANOBOT_WORKSPACE")
         if host_ws:
             base_dir = Path(host_ws) / "skills"
             base_dir.mkdir(parents=True, exist_ok=True)

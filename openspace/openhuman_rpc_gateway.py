@@ -96,6 +96,124 @@ def submit_openhuman_inference_prompt(
     }
 
 
+def get_openhuman_client_config(
+    rpc_url: str,
+    *,
+    auth_token: str | None = None,
+    headers: Dict[str, str] | None = None,
+    timeout: float = 20.0,
+) -> Dict[str, Any]:
+    result, request_id = _call_openhuman_rpc(
+        rpc_url,
+        method="config.get_client_config",
+        params={},
+        auth_token=auth_token,
+        headers=headers,
+        timeout=timeout,
+    )
+    return {"requestId": request_id, "result": result}
+
+
+def get_openhuman_runtime_flags(
+    rpc_url: str,
+    *,
+    auth_token: str | None = None,
+    headers: Dict[str, str] | None = None,
+    timeout: float = 20.0,
+) -> Dict[str, Any]:
+    result, request_id = _call_openhuman_rpc(
+        rpc_url,
+        method="config.get_runtime_flags",
+        params={},
+        auth_token=auth_token,
+        headers=headers,
+        timeout=timeout,
+    )
+    return {"requestId": request_id, "result": result}
+
+
+def get_openhuman_agent_server_status(
+    rpc_url: str,
+    *,
+    auth_token: str | None = None,
+    headers: Dict[str, str] | None = None,
+    timeout: float = 20.0,
+) -> Dict[str, Any]:
+    result, request_id = _call_openhuman_rpc(
+        rpc_url,
+        method="config.agent_server_status",
+        params={},
+        auth_token=auth_token,
+        headers=headers,
+        timeout=timeout,
+    )
+    return {"requestId": request_id, "result": result}
+
+
+def update_openhuman_local_ai_settings(
+    rpc_url: str,
+    *,
+    patch: Dict[str, Any],
+    auth_token: str | None = None,
+    headers: Dict[str, str] | None = None,
+    timeout: float = 30.0,
+) -> Dict[str, Any]:
+    if not isinstance(patch, dict):
+        raise OpenHumanRpcGatewayError("patch must be a dict", status_code=400)
+    result, request_id = _call_openhuman_rpc(
+        rpc_url,
+        method="config.update_local_ai_settings",
+        params=patch,
+        auth_token=auth_token,
+        headers=headers,
+        timeout=timeout,
+    )
+    return {"requestId": request_id, "result": result}
+
+
+def update_openhuman_model_settings(
+    rpc_url: str,
+    *,
+    patch: Dict[str, Any],
+    auth_token: str | None = None,
+    headers: Dict[str, str] | None = None,
+    timeout: float = 30.0,
+) -> Dict[str, Any]:
+    if not isinstance(patch, dict):
+        raise OpenHumanRpcGatewayError("patch must be a dict", status_code=400)
+    result, request_id = _call_openhuman_rpc(
+        rpc_url,
+        method="config.update_model_settings",
+        params=patch,
+        auth_token=auth_token,
+        headers=headers,
+        timeout=timeout,
+    )
+    return {"requestId": request_id, "result": result}
+
+
+def get_openhuman_version(
+    rpc_url: str,
+    *,
+    auth_token: str | None = None,
+    headers: Dict[str, str] | None = None,
+    timeout: float = 20.0,
+) -> Dict[str, Any]:
+    result, request_id = _call_openhuman_rpc(
+        rpc_url,
+        method="core.version",
+        params={},
+        auth_token=auth_token,
+        headers=headers,
+        timeout=timeout,
+    )
+    return {
+        "requestId": request_id,
+        "version": str(result.get("version") or "").strip(),
+        "result": result,
+    }
+
+
 def _call_openhuman_rpc(
     rpc_url: str,
     *,
