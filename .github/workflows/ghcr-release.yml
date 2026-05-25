@@ -141,11 +141,37 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            GHCR rollout release for the Cubecloud fork.
+            ## Cubecloud Fork — ${{ github.ref_name }}
 
-            Published images:
-            - ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-runtime:${{ github.ref_name }}
-            - ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-agents-monitor:${{ github.ref_name }}
-            - ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-cubecloud-dashboard:${{ github.ref_name }}
+            ### What's new
 
-            The `main` channel is also refreshed on pushes to `origin/main`.
+            **OpenHuman replaces OpenClaw as the delegated worker runtime.**
+
+            - Full stack migration: `external_agent_gateway.py`, `external_agents.py`, `mcp_server.py`, and `host_detection/` now route delegated handoff through the OpenHuman JSON-RPC adapter instead of OpenClaw.
+            - New `openspace/openhuman_rpc_gateway.py` and `openspace/openhuman_gateway.py` provide typed wrappers for `core.version`, `core.ping`, `config.*`, and model-settings RPC surfaces.
+            - Ollama local-inference bridge wired: `OPENHUMAN_OLLAMA_BASE_URL` is forwarded through the runtime sidecar config on startup.
+            - Token env alias fixed: runtime now reads `OPENHUMAN_CORE_TOKEN` consistently; stale `OPENHUMAN_RPC_TOKEN` references removed from `.env.example`.
+            - Blocking-state detection refined: `openhuman_gateway.py` distinguishes `initializing` / `degraded` from a hard unavailable state.
+
+            **Smoke test Level 3 extended.**
+
+            - `core.version` response validated with string extraction (not raw dict comparison).
+            - `config.get_client_config`, `config.get_runtime_flags`, `config.agent_server_status` probed with soft-skip on `"unknown method"` — forward-compatible with future OpenHuman API versions.
+
+            ---
+
+            ### Published images
+
+            | Image | Tag |
+            |---|---|
+            | `ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-runtime` | `${{ github.ref_name }}` · `main` |
+            | `ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-agents-monitor` | `${{ github.ref_name }}` · `main` |
+            | `ghcr.io/${{ needs.prepare.outputs.owner_lc }}/openspace-cubecloud-dashboard` | `${{ github.ref_name }}` · `main` |
+
+            Pull the new images:
+            ```sh
+            docker compose pull
+            docker compose up -d
+            ```
+
+            The `main` channel is kept current on every push to `origin/main`.
