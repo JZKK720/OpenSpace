@@ -106,8 +106,8 @@ services:
     restart: unless-stopped
 
   openhuman:
-    image: "ghcr.io/tinyhumansai/openhuman-core:${OPENHUMAN_CORE_IMAGE_TAG:-latest}"
-    user: "0:0"
+    image: "${OPENHUMAN_CORE_IMAGE_REPOSITORY:-ghcr.io/jzkk720/openhuman-core}:${OPENHUMAN_CORE_IMAGE_TAG:-latest}"
+    user: "${OPENHUMAN_CONTAINER_USER:-10001:10001}"
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -115,12 +115,15 @@ services:
       - ALL
     tmpfs:
       - /tmp
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       BACKEND_URL: "https://api.tinyhumans.ai"
       OPENHUMAN_APP_ENV: production
       OPENHUMAN_CORE_HOST: "0.0.0.0"
       OPENHUMAN_CORE_PORT: "7788"
       OPENHUMAN_CORE_TOKEN: "${OPENHUMAN_RPC_TOKEN:-change-me-openhuman-rpc}"
+      OPENHUMAN_OLLAMA_BASE_URL: "${OPENHUMAN_OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OPENHUMAN_WORKSPACE: "/home/openhuman/.openhuman"
       XDG_CACHE_HOME: "/home/openhuman/.openhuman/cache"
       TMPDIR: "/tmp"
