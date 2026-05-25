@@ -71,13 +71,13 @@ def test_openhuman_rpc_helper_builds_expected_jsonrpc_requests(monkeypatch):
     }
 
 
-def test_openhuman_adapter_requires_ready_runtime(monkeypatch):
+def test_openhuman_adapter_blocks_disabled_runtime(monkeypatch):
     adapter = external_agent_gateway.OpenHumanRpcAdapter()
 
     monkeypatch.setattr(
         external_agent_gateway,
         "get_openhuman_inference_status",
-        lambda *args, **kwargs: {"state": "degraded", "logs": ["warming up"]},
+        lambda *args, **kwargs: {"state": "disabled", "logs": ["local ai disabled"]},
     )
 
     with pytest.raises(external_agent_gateway.ExternalAgentGatewayError) as exc_info:
@@ -101,7 +101,7 @@ def test_openhuman_adapter_normalizes_single_shot_prompt_response(monkeypatch):
     monkeypatch.setattr(
         external_agent_gateway,
         "get_openhuman_inference_status",
-        lambda *args, **kwargs: {"state": "ready", "provider": "ollama", "logs": []},
+        lambda *args, **kwargs: {"state": "degraded", "provider": "ollama", "logs": ["warming up"]},
     )
 
     def fake_submit(rpc_url, *, prompt, auth_token=None, headers=None, max_tokens=512, no_think=True, timeout=120.0):

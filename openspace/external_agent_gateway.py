@@ -36,6 +36,7 @@ _OPENCLAW_HISTORY_MAX_TURNS = 200
 _OPENCLAW_HISTORY_LOCK = Lock()
 _OPENCLAW_HISTORY_CACHE: Dict[str, Dict[str, List[Dict[str, Any]]]] | None = None
 _OPENCLAW_REQUEST_TIMEOUT_SECONDS = 240.0
+_OPENHUMAN_BLOCKING_STATES = frozenset({"disabled", "install_failed", "not_ready"})
 
 
 class ExternalAgentAdapter(ABC):
@@ -609,7 +610,7 @@ class OpenHumanRpcAdapter(ExternalAgentAdapter):
             ) from exc
 
         state = str(status.get("state") or "").strip().lower()
-        if state != "ready":
+        if not state or state in _OPENHUMAN_BLOCKING_STATES:
             raise ExternalAgentGatewayError(
                 f"OpenHuman inference runtime is not ready (state: {state or 'unknown'})",
                 status_code=503,

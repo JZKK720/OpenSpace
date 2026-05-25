@@ -226,6 +226,13 @@ if (-not $openhumanDebugPort) {
     Write-OK "OPENHUMAN_DEBUG_PORT: $openhumanDebugPort"
 }
 
+$openhumanOllamaUrl = Get-EnvValue 'OPENHUMAN_OLLAMA_BASE_URL'
+if (-not $openhumanOllamaUrl) {
+    Write-OK 'OPENHUMAN_OLLAMA_BASE_URL: http://host.docker.internal:11434 (default host Ollama bridge)'
+} else {
+    Write-OK "OPENHUMAN_OLLAMA_BASE_URL: $openhumanOllamaUrl"
+}
+
 $ironToken = Get-EnvValue 'IRONCLAW_AUTH_TOKEN'
 if (-not $ironToken) {
     Write-Host ""
