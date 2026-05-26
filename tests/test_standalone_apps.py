@@ -18,3 +18,21 @@ def test_repo_standalone_apps_surface_aionui(monkeypatch):
     assert aionui["name"] == "AgentOS / AionUi"
     assert aionui["publicUrl"] == "http://127.0.0.1:3308/"
     assert aionui["healthUrl"] == "http://host.docker.internal:3308/"
+
+
+def test_repo_standalone_apps_surface_hermes_console(monkeypatch):
+    monkeypatch.delenv("OPENSPACE_STANDALONE_APPS_CONFIG", raising=False)
+    monkeypatch.setenv("HERMES_CONSOLE_PUBLIC_URL", "http://127.0.0.1:9119/")
+    monkeypatch.setenv("HERMES_CONSOLE_INTERNAL_URL", "http://host.docker.internal:9119/")
+    monkeypatch.setenv("HERMES_CONSOLE_HEALTH_URL", "http://host.docker.internal:9119/api/status")
+
+    apps = load_standalone_apps()
+    app_ids = {app["id"] for app in apps}
+
+    assert "hermes-console" in app_ids
+
+    hermes_console = get_standalone_app("hermes-console")
+    assert hermes_console is not None
+    assert hermes_console["name"] == "Hermes Console"
+    assert hermes_console["publicUrl"] == "http://127.0.0.1:9119/"
+    assert hermes_console["healthUrl"] == "http://host.docker.internal:9119/api/status"

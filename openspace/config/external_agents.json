@@ -62,6 +62,7 @@
       "health_url_env": "HERMES_HEALTH_URL",
       "action_url_env": "HERMES_ACTION_URL",
       "action_auth_token_env": "HERMES_API_KEY",
+      "promptTimeoutSeconds": 180,
       "model": "gemma4:e4b-it-q8_0",
       "tags": ["assistant", "delegate", "hermes"]
     }

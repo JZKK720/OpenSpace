@@ -90,6 +90,7 @@ docker compose ps
 | Service | URL |
 |---|---|
 | Cubecloud dashboard | `http://127.0.0.1:7788` |
+| Cubecloud website | `https://www.cubecloud.io` |
 | Agents monitor | `http://127.0.0.1:5173` |
 | OpenHuman UI | `http://127.0.0.1:1420/` |
 | OpenHuman debug health | `http://127.0.0.1:7181/health` |
@@ -130,17 +131,24 @@ OPENHUMAN_RPC_TOKEN=your_openhuman_rpc_token
 OPENHUMAN_OLLAMA_BASE_URL=http://host.docker.internal:11434
 OPENHUMAN_DEBUG_PORT=7181
 
-# Hermes — only needed if not running on default port 8789
-HERMES_PUBLIC_URL=http://127.0.0.1:9119/
+# Hermes — interactive hermes-webui defaults to 8791; OpenAI-compatible API remains on 8789
+# Hermes' console or control interface may still live on 9119, but OpenSpace
+# should deep-link the user-facing chat/workflow surface instead.
+HERMES_PUBLIC_URL=http://127.0.0.1:8791/
 HERMES_INTERNAL_URL=http://host.docker.internal:8789/
 HERMES_ACTION_URL=http://host.docker.internal:8789/v1/chat/completions
 HERMES_API_KEY=your_key_if_required
+
+# Optional Hermes console / control surface if you want a separate app card
+HERMES_CONSOLE_PUBLIC_URL=http://127.0.0.1:9119/
+HERMES_CONSOLE_INTERNAL_URL=http://host.docker.internal:9119/
+HERMES_CONSOLE_HEALTH_URL=http://host.docker.internal:9119/api/status
 
 # AgentOS / AionUi browser-facing UI
 AIONUI_PUBLIC_URL=http://127.0.0.1:3308/
 ```
 
-`OPENHUMAN_PUBLIC_URL` is the dashboard/browser link for the OpenHuman UI on port `1420`; the internal worker that OpenSpace calls stays on `http://openhuman:7788/rpc`; `OPENHUMAN_OLLAMA_BASE_URL` lets the containerized OpenHuman worker reach a host-side Ollama daemon at `http://host.docker.internal:11434`; and `OPENHUMAN_DEBUG_PORT` remains the optional host-local debug mirror. `HERMES_PUBLIC_URL` is the dashboard/browser link for the Hermes UI on port `9119`; the actual OpenAI-compatible API that OpenSpace calls stays on port `8789`.
+`OPENHUMAN_PUBLIC_URL` is the dashboard/browser link for the OpenHuman UI on port `1420`; the internal worker that OpenSpace calls stays on `http://openhuman:7788/rpc`; `OPENHUMAN_OLLAMA_BASE_URL` lets the containerized OpenHuman worker reach a host-side Ollama daemon at `http://host.docker.internal:11434`; and `OPENHUMAN_DEBUG_PORT` remains the optional host-local debug mirror. `HERMES_PUBLIC_URL` should point to the interactive Hermes WebUI on port `8791`; if you also want the Hermes console/control interface surfaced separately in the app registry, use `HERMES_CONSOLE_PUBLIC_URL` on `9119` with `HERMES_CONSOLE_HEALTH_URL` on `/api/status`. The actual OpenAI-compatible API that OpenSpace calls stays on port `8789`.
 
 Dashboard external-agent handoff and history now proxy through the runtime MCP endpoint, so agent auth tokens stay in the runtime container. If you run `openspace-dashboard` outside Docker, set `OPENSPACE_RUNTIME_MCP_URL=http://127.0.0.1:8788/mcp` in that shell before starting the dashboard server.
 

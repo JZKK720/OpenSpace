@@ -15,7 +15,7 @@
 
 **One Command to Evolve All Your AI Agents**: OpenClaw, nanobot, Claude Code, Codex, Cursor and etc.
 
-Code in this repository remains available under the MIT license in [LICENSE](LICENSE). Cubecloud branding, logos, and `cubecloud.io` rights are reserved under [TRADEMARKS.md](TRADEMARKS.md), with explicit brand assets listed in [BRAND_ASSETS.md](BRAND_ASSETS.md).
+Code in this repository remains available under the MIT license in [LICENSE](LICENSE). Cubecloud branding, logos, and `https://www.cubecloud.io` rights are reserved under [TRADEMARKS.md](TRADEMARKS.md), with explicit brand assets listed in [BRAND_ASSETS.md](BRAND_ASSETS.md).
 
 <img src="assets/cli-typing.gif" width="500px" alt="openspace --query your task">
 
@@ -367,6 +367,7 @@ docker compose -f docker-compose.release.yml down -v    # also remove anonymous 
 | Service | URL |
 |---|---|
 | Cubecloud dashboard | `http://127.0.0.1:7788` |
+| Cubecloud website | `https://www.cubecloud.io` |
 | Agents monitor | `http://127.0.0.1:5173` |
 | OpenHuman UI | `http://127.0.0.1:1420/` |
 | OpenHuman debug health | `http://127.0.0.1:7181/health` |
@@ -382,7 +383,7 @@ GATEWAY_AUTH_TOKEN=your_token_here
 
 All other values have defaults in `.env.example`. Override IronClaw URLs if your deployment differs.
 
-Browser-facing defaults also matter for dashboard links: `OPENHUMAN_PUBLIC_URL` should point to the OpenHuman UI on `http://127.0.0.1:1420/`, while `OPENHUMAN_ACTION_URL` and `OPENHUMAN_HEALTH_URL` stay on the internal worker at `http://openhuman:7788/...` and `OPENHUMAN_DEBUG_PORT` remains the optional host-local debug mirror on `127.0.0.1:7181`. `HERMES_PUBLIC_URL` should point to the Hermes UI on `http://127.0.0.1:9119/`, while `HERMES_ACTION_URL` stays on the OpenAI-compatible API at port `8789`. `AIONUI_PUBLIC_URL` should point to the AgentOS / AionUi UI on `http://127.0.0.1:3308/`.
+Browser-facing defaults also matter for dashboard links: `OPENHUMAN_PUBLIC_URL` should point to the OpenHuman UI on `http://127.0.0.1:1420/`, while `OPENHUMAN_ACTION_URL` and `OPENHUMAN_HEALTH_URL` stay on the internal worker at `http://openhuman:7788/...` and `OPENHUMAN_DEBUG_PORT` remains the optional host-local debug mirror on `127.0.0.1:7181`. `HERMES_PUBLIC_URL` should point to the interactive Hermes WebUI on `http://127.0.0.1:8791/`; Hermes' console or control interface can be surfaced separately with `HERMES_CONSOLE_PUBLIC_URL=http://127.0.0.1:9119/` and `HERMES_CONSOLE_HEALTH_URL=http://host.docker.internal:9119/api/status`. `HERMES_ACTION_URL` stays on the OpenAI-compatible API at port `8789`. `AIONUI_PUBLIC_URL` should point to the AgentOS / AionUi UI on `http://127.0.0.1:3308/`.
 
 If you want AionUi workflows to appear in the Workflows page, set `AIONUI_WORKFLOWS_SOURCE_DIR` in the repo-root `.env` to either an exported workflow folder, an exported AionUi conversation JSON file/folder, or the live AionUi data directory / `aionui.db`, then run `python sync_aionui_workflows.py` to mirror them into `logs/recordings/aionui-workflows`.
 
@@ -406,7 +407,7 @@ docker compose -f docker-compose.release.yml ps
 
 For delegated handoff probes on Windows, prefer the built-in `scripts/install.ps1` smoke check or `curl.exe`/Python clients for POST requests. Windows PowerShell 5.1 `Invoke-WebRequest` can drop longer Hermes handoff responses even when the dashboard route succeeds.
 
-Expected: external agents `ironclaw`, `openhuman`, `hermes`; standalone apps are driven by `openspace/config/standalone_apps.json` and can include `my-daily-monitor`, `open-design`, `aionui`, and other configured entries.
+Expected: external agents `ironclaw`, `openhuman`, `hermes`; standalone apps are driven by `openspace/config/standalone_apps.json` and can include `my-daily-monitor`, `open-design`, `aionui`, `hermes-console`, and other configured entries.
 
 > [!NOTE]
 > **Windows full guide:** [INSTALL_FORK_WINDOWS.md](INSTALL_FORK_WINDOWS.md) covers the local non-Docker build path and minimal runtime bundle options.
@@ -445,7 +446,7 @@ When you run the dashboard in Docker, set `IRONCLAW_AUTH_TOKEN` to the same valu
 
 The same registry also ships `OpenHuman` and `Hermes` defaults. `OpenHuman` is an internal JSON-RPC worker on `/rpc`; OpenSpace checks `openhuman.inference_status` before dispatching `openhuman.inference_prompt`, and the initial slice is handoff-only with no dashboard history polling. For user navigation, set `OPENHUMAN_PUBLIC_URL` to the browser-facing OpenHuman UI on port `1420` instead of the runtime debug port. When the worker should use a host-side Ollama daemon, set `OPENHUMAN_OLLAMA_BASE_URL` to a container-reachable endpoint such as `http://host.docker.internal:11434/`. `Hermes` remains a stateless `openai-compat` handoff target.
 
-For browser navigation from the dashboard, `HERMES_PUBLIC_URL` should target the Hermes UI on port `9119`; the API and health probes remain on port `8789`. `AIONUI_PUBLIC_URL` should target the AgentOS / AionUi UI on port `3308`.
+For browser navigation from the dashboard, `HERMES_PUBLIC_URL` should target the interactive Hermes WebUI on port `8791`. If you also want the non-chat Hermes console/control surface exposed as a standalone app card, set `HERMES_CONSOLE_PUBLIC_URL` to port `9119` and `HERMES_CONSOLE_HEALTH_URL` to `/api/status`. The API and health probes for Hermes handoff remain on port `8789`. `AIONUI_PUBLIC_URL` should target the AgentOS / AionUi UI on port `3308`.
 
 For the bundled Docker topology, set `OPENHUMAN_RPC_TOKEN` in `.env`. Compose maps that value into the OpenHuman worker as `OPENHUMAN_CORE_TOKEN`, while dashboard handoff and history routes now proxy through the runtime MCP surface so external-agent auth secrets stay in the runtime container. `OPENHUMAN_PUBLIC_URL` is the browser-facing dashboard link and defaults to `http://127.0.0.1:1420/`; `OPENHUMAN_DEBUG_PORT` keeps the optional host-local debug endpoint on `127.0.0.1:7181` by default; and `OPENHUMAN_OLLAMA_BASE_URL` defaults to `http://host.docker.internal:11434/` so the containerized OpenHuman worker can reach a host Ollama daemon without falling back to its internal `localhost`.
 
@@ -672,7 +673,7 @@ A collaborative registry where agents share evolved skills. When one agent evolv
 - Brand asset notice: [BRAND_ASSETS.md](BRAND_ASSETS.md)
 - Contribution policy: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-You may use, fork, modify, and contribute to the code under MIT, but no right is granted to use the Cubecloud name, `cubecloud.io`, logos, or other Cubecloud brand identifiers without permission.
+You may use, fork, modify, and contribute to the code under MIT, but no right is granted to use the Cubecloud name, `https://www.cubecloud.io`, logos, or other Cubecloud brand identifiers without permission.
 
 For most users, [Quick Start](#-quick-start) is all you need. For advanced options (environment variables, execution modes, security policies, etc.), see [`openspace/config/README.md`](openspace/config/README.md).
 

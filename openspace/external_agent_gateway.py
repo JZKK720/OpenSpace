@@ -328,7 +328,12 @@ class OpenAICompatAdapter(ExternalAgentAdapter):
             payload=payload,
             auth_token=str(agent.get("_actionAuthToken") or "").strip() or None,
             headers=_headers(agent.get("_actionHeaders")),
-            timeout=60.0,
+            timeout=_coerce_positive_float(
+                agent.get("promptTimeoutSeconds")
+                if agent.get("promptTimeoutSeconds") is not None
+                else agent.get("timeoutSeconds"),
+                default=60.0,
+            ),
         )
 
         reply = _extract_openai_compat_reply(response)

@@ -33,6 +33,17 @@
       "internal_url_env": "AIONUI_INTERNAL_URL",
       "health_url_env": "AIONUI_HEALTH_URL",
       "tags": ["agentos", "aionui", "workspace", "workflows"]
+    },
+    {
+      "id": "hermes-console",
+      "name": "Hermes Console",
+      "description": "Hermes console and control interface surfaced separately from the interactive Hermes WebUI for operator status and controls.",
+      "kind": "control-app",
+      "icon": "spark",
+      "public_url_env": "HERMES_CONSOLE_PUBLIC_URL",
+      "internal_url_env": "HERMES_CONSOLE_INTERNAL_URL",
+      "health_url_env": "HERMES_CONSOLE_HEALTH_URL",
+      "tags": ["hermes", "console", "control"]
     }
   ]
 }

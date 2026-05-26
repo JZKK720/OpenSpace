@@ -4,11 +4,13 @@ Smoke test for OpenSpace MCP streamable-http integration.
 Level 1: Direct MCP protocol (initialize + tools/list + tools/call search_skills)
 Level 2: IronClaw chat-thread integration (health + thread/new + chat/send)
 Level 3: OpenHuman JSON-RPC integration (/health + core.ping + core.version + openhuman.inference_status + openhuman.inference_prompt + config.get_client_config + config.get_runtime_flags + config.agent_server_status + openhuman-rpc handoff)
+Level 4: Hermes split-surface integration (dashboard API, interactive WebUI, separate console surface, OpenAI-compatible models, and openai-compat handoff)
 
 Usage:
     python smoke_test_mcp.py
     python smoke_test_mcp.py --level 2 --ironclaw-token <token>
     python smoke_test_mcp.py --level 3 --ironclaw-token <token> --openhuman-token <token>
+    python smoke_test_mcp.py --level 4 --hermes-token <token>
 """
 
 import argparse
@@ -31,6 +33,10 @@ from openspace.openhuman_rpc_gateway import (
 MCP_URL = "http://127.0.0.1:8788/mcp"
 IC_URL = "http://127.0.0.1:3231"
 OH_URL = "http://127.0.0.1:7181"
+DASHBOARD_URL = "http://127.0.0.1:7788"
+HERMES_WEB_URL = "http://127.0.0.1:8791/"
+HERMES_CONSOLE_STATUS_URL = "http://127.0.0.1:9119/api/status"
+HERMES_API_URL = "http://127.0.0.1:8789"
 
 MCP_HEADERS = {
     "Content-Type": "application/json",
@@ -345,11 +351,108 @@ def run_level3(token: str):
     return ok
 
 
+def run_level4(token: str):
+    ok = True
+    model_id = ""
+    print("\n=== Level 4: Hermes split-surface integration ===")
+
+    with httpx.Client(timeout=60) as client:
+        try:
+            r = client.get(HERMES_WEB_URL)
+            r.raise_for_status()
+            print(f"  {PASS} Hermes WebUI reachable  status={r.status_code}")
+        except Exception as e:
+            print(f"  {FAIL} Hermes WebUI failed: {e}")
+            ok = False
+
+        try:
+            r = client.get(HERMES_CONSOLE_STATUS_URL)
+            r.raise_for_status()
+            print(f"  {PASS} Hermes console reachable  status={r.status_code}")
+        except Exception as e:
+            print(f"  {FAIL} Hermes console failed: {e}")
+            ok = False
+
+        try:
+            r = client.get(f"{DASHBOARD_URL}/api/v1/standalone-apps/hermes-console")
+            r.raise_for_status()
+            payload = r.json()
+            public_url = payload.get("publicUrl")
+            if public_url != "http://127.0.0.1:9119/":
+                print(f"  {FAIL} hermes-console app returned unexpected publicUrl: {public_url!r}")
+                ok = False
+            else:
+                print(f"  {PASS} dashboard standalone app hermes-console  publicUrl={public_url!r}")
+        except Exception as e:
+            print(f"  {FAIL} dashboard standalone app hermes-console failed: {e}")
+            ok = False
+
+        try:
+            r = client.get(f"{DASHBOARD_URL}/api/v1/external-agents")
+            r.raise_for_status()
+            items = r.json().get("items", [])
+            hermes = next((item for item in items if item.get("id") == "hermes"), None)
+            public_url = (hermes or {}).get("publicUrl")
+            if not hermes:
+                print(f"  {FAIL} dashboard external-agents list missing hermes entry")
+                ok = False
+            elif public_url != "http://127.0.0.1:8791/":
+                print(f"  {FAIL} Hermes external agent returned unexpected publicUrl: {public_url!r}")
+                ok = False
+            else:
+                print(f"  {PASS} dashboard external agent hermes  publicUrl={public_url!r}")
+        except Exception as e:
+            print(f"  {FAIL} dashboard external-agents hermes check failed: {e}")
+            ok = False
+
+        try:
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
+            r = client.get(f"{HERMES_API_URL}/v1/models", headers=headers)
+            r.raise_for_status()
+            payload = r.json()
+            data = payload.get("data") if isinstance(payload, dict) else None
+            model_count = len(data) if isinstance(data, list) else 0
+            if isinstance(data, list):
+                for item in data:
+                    if isinstance(item, dict) and str(item.get("id") or "").strip():
+                        model_id = str(item.get("id") or "").strip()
+                        break
+            print(f"  {PASS} Hermes OpenAI-compatible models reachable  count={model_count}")
+        except Exception as e:
+            print(f"  {FAIL} Hermes /v1/models failed: {e}")
+            ok = False
+
+        try:
+            agent = {
+                "id": "hermes",
+                "protocol": "openai-compat",
+                "capabilities": ["handoff"],
+                "actionUrl": f"{HERMES_API_URL}/v1/chat/completions",
+                "_actionAuthToken": token,
+                "model": model_id,
+                "promptTimeoutSeconds": 180,
+            }
+            result = handoff_external_agent(agent, prompt="Reply with one short word.")
+            latest_turn = result.get("latestTurn") or {}
+            reply = str(latest_turn.get("response") or "").strip()
+            if not reply:
+                print(f"  {FAIL} Hermes handoff returned an empty response")
+                ok = False
+            else:
+                print(f"  {PASS} Hermes openai-compat handoff  reply={reply!r}")
+        except Exception as e:
+            print(f"  {FAIL} Hermes openai-compat handoff failed: {e}")
+            ok = False
+
+    return ok
+
+
 def main():
     parser = argparse.ArgumentParser(description="OpenSpace MCP smoke test")
-    parser.add_argument("--level", type=int, choices=[1, 2, 3], default=1)
+    parser.add_argument("--level", type=int, choices=[1, 2, 3, 4], default=1)
     parser.add_argument("--ironclaw-token", default=None, help="IronClaw auth token for level 2")
     parser.add_argument("--openhuman-token", default=None, help="OpenHuman auth token for level 3")
+    parser.add_argument("--hermes-token", default=None, help="Hermes auth token for level 4")
     args = parser.parse_args()
 
     passed = True
@@ -364,6 +467,11 @@ def main():
             print("\n[!] Pass --openhuman-token for level 3")
         else:
             passed = run_level3(args.openhuman_token) and passed
+    if args.level >= 4:
+        if not args.hermes_token:
+            print("\n[!] Pass --hermes-token for level 4")
+        else:
+            passed = run_level4(args.hermes_token) and passed
 
     print()
     if passed:
