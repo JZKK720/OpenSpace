@@ -15,7 +15,7 @@
 
 **One Command to Evolve All Your AI Agents**: OpenClaw, nanobot, Claude Code, Codex, Cursor and etc.
 
-Code in this repository remains available under the MIT license in [LICENSE](LICENSE). Cubecloud branding, logos, and `https://www.cubecloud.io` rights are reserved under [TRADEMARKS.md](TRADEMARKS.md), with explicit brand assets listed in [BRAND_ASSETS.md](BRAND_ASSETS.md).
+Code in this repository remains available under the MIT license in [LICENSE](LICENSE). Cubecloud branding, logos, and `cubecloud.io` rights are reserved under [TRADEMARKS.md](TRADEMARKS.md), with explicit brand assets listed in [BRAND_ASSETS.md](BRAND_ASSETS.md).
 
 <img src="assets/cli-typing.gif" width="500px" alt="openspace --query your task">
 
@@ -367,7 +367,6 @@ docker compose -f docker-compose.release.yml down -v    # also remove anonymous 
 | Service | URL |
 |---|---|
 | Cubecloud dashboard | `http://127.0.0.1:7788` |
-| Cubecloud website | `https://www.cubecloud.io` |
 | Agents monitor | `http://127.0.0.1:5173` |
 | OpenHuman UI | `http://127.0.0.1:1420/` |
 | OpenHuman debug health | `http://127.0.0.1:7181/health` |
@@ -673,7 +672,7 @@ A collaborative registry where agents share evolved skills. When one agent evolv
 - Brand asset notice: [BRAND_ASSETS.md](BRAND_ASSETS.md)
 - Contribution policy: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-You may use, fork, modify, and contribute to the code under MIT, but no right is granted to use the Cubecloud name, `https://www.cubecloud.io`, logos, or other Cubecloud brand identifiers without permission.
+You may use, fork, modify, and contribute to the code under MIT, but no right is granted to use the Cubecloud name, `cubecloud.io`, logos, or other Cubecloud brand identifiers without permission.
 
 For most users, [Quick Start](#-quick-start) is all you need. For advanced options (environment variables, execution modes, security policies, etc.), see [`openspace/config/README.md`](openspace/config/README.md).
 

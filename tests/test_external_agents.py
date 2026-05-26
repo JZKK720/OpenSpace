@@ -41,6 +41,7 @@ def test_repo_external_agents_surface_hermes_public_url(monkeypatch):
     assert hermes["publicUrl"] == "http://127.0.0.1:8791/"
     assert hermes["actionUrl"] == "http://host.docker.internal:8789/v1/chat/completions"
     assert hermes["healthUrl"] == "http://host.docker.internal:8789/health"
+    assert hermes["promptTimeoutSeconds"] == 180
 
 
 def test_openai_compat_gateway_honors_prompt_timeout(monkeypatch):

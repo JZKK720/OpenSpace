@@ -90,7 +90,6 @@ docker compose ps
 | Service | URL |
 |---|---|
 | Cubecloud dashboard | `http://127.0.0.1:7788` |
-| Cubecloud website | `https://www.cubecloud.io` |
 | Agents monitor | `http://127.0.0.1:5173` |
 | OpenHuman UI | `http://127.0.0.1:1420/` |
 | OpenHuman debug health | `http://127.0.0.1:7181/health` |

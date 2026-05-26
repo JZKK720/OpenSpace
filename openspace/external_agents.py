@@ -325,6 +325,12 @@ def load_external_agents() -> List[Dict[str, Any]]:
         history_mode = str(item.get("history_mode") or _resolve_history_mode(protocol, capabilities)).strip().lower()
         standalone_app_id = str(item.get("standalone_app_id") or "").strip()
         model = str(item.get("model") or "").strip()
+        prompt_timeout_seconds = item.get("promptTimeoutSeconds")
+        if prompt_timeout_seconds is None:
+            prompt_timeout_seconds = item.get("prompt_timeout_seconds")
+        timeout_seconds = item.get("timeoutSeconds")
+        if timeout_seconds is None:
+            timeout_seconds = item.get("timeout_seconds")
         mcp_server_name = ""
         if mcp_url:
             mcp_server_name = str(item.get("mcp_server_name") or _build_mcp_server_name(agent_id)).strip()
@@ -352,6 +358,8 @@ def load_external_agents() -> List[Dict[str, Any]]:
                 "actionUrl": action_url,
                 "historyUrl": history_url,
                 "mcpUrl": mcp_url,
+                "promptTimeoutSeconds": prompt_timeout_seconds,
+                "timeoutSeconds": timeout_seconds,
                 "hasActionUrl": bool(action_url),
                 "hasMcpUrl": bool(mcp_url),
                 "supportsHandoff": bool(action_url) and "handoff" in capabilities,
