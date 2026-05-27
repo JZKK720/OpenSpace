@@ -30,6 +30,7 @@ The endpoint is common; the **host config syntax is not**. nanobot uses `tools.m
 ```bash
 cp -r host_skills/skill-discovery/ /path/to/nanobot/nanobot/skills/
 cp -r host_skills/delegate-task/ /path/to/nanobot/nanobot/skills/
+cp -r host_skills/phased-delegation/ /path/to/nanobot/nanobot/skills/
 ```
 
 ### 2. Option A: stdio (simplest)
@@ -98,6 +99,7 @@ Or:
 ```bash
 cp -r host_skills/skill-discovery/ /path/to/openclaw/skills/
 cp -r host_skills/delegate-task/ /path/to/openclaw/skills/
+cp -r host_skills/phased-delegation/ /path/to/openclaw/skills/
 ```
 
 ### 2. Option A: stdio via mcporter
@@ -161,12 +163,13 @@ openspace-mcp              ← 4 tools exposed
   └── upload_skill           ← push skill to cloud community
 ```
 
-The two host skills teach the agent **when and how** to call these tools:
+The three host skills teach the agent **when and how** to call these tools:
 
 | Skill | MCP Tools | Purpose |
 |-------|-----------|---------|
 | **skill-discovery** | `search_skills` | Search local + cloud skills → decide: follow it yourself, delegate, or skip |
 | **delegate-task** | `execute_task` `search_skills` `fix_skill` `upload_skill` | Delegate tasks, search skills, repair broken skills, upload evolved skills |
+| **phased-delegation** | `search_skills` `execute_task` `fix_skill` `upload_skill` | Search first, split risky work into bounded phases, and verify results before reporting completion |
 
 Skills auto-evolve inside `execute_task` (**FIX** / **DERIVED** / **CAPTURED**). After every call, your agent reports results to the user via its messaging tool.
 

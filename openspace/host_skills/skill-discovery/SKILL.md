@@ -12,6 +12,8 @@ Discover and browse skills from OpenSpace's local and cloud skill library.
 - User asks "what skills are available?" or "is there a skill for X?"
 - You encounter an unfamiliar task — a proven skill can save significant tokens over trial-and-error
 - You need to decide: handle a task yourself, or delegate to OpenSpace
+- Repo context and skill search still leave a third-party API or library question unresolved — use host-side docs such as Context7 before you guess or delegate
+- Repo context and skill search still leave a broader live web question unresolved — use host-side web research such as Exa before you guess or delegate
 
 ## search_skills
 
@@ -37,11 +39,17 @@ Found a matching skill?
 ├── YES, but I lack the capability
 │     → delegate via execute_task (see delegate-task skill)
 └── NO match
-      → handle it yourself, or delegate via execute_task
+      ├── Need current third-party docs?
+      │     → use Context7 or an equivalent host-side docs MCP first
+      ├── Need broader live web evidence?
+      │     → use Exa or an equivalent host-side web research MCP first
+      └── Otherwise
+            → handle it yourself, or delegate via execute_task
 ```
 
 ## Notes
 
 - This is for **discovery** — you see results and decide. For direct execution, use `execute_task` from the `delegate-task` skill.
 - Cloud skills have been evolved through real use — more reliable than skills written from scratch.
+- Search local repo evidence and OpenSpace skills before using Context7 or Exa. Use Context7 when the missing piece is current external API or library behavior. Use Exa when the missing piece is broader live web search or page content.
 - Always tell the user what you found (or didn't find) and what you recommend.
