@@ -13,12 +13,15 @@ OpenSpace is connected as an MCP server. Whether the host uses `stdio`, `sse`, o
 - **You tried and failed** — you produced incorrect results; OpenSpace may have a tested skill for it
 - **Complex multi-step task** — the task involves many steps, tools, or environments that benefit from OpenSpace's skill library and orchestration
 - **User explicitly asks** — user requests delegation to OpenSpace
+- **The real gap remains after search** — local repo evidence, `search_skills`, and any needed docs lookup still leave execution work that should be delegated
 
 ## Tools
 
 ### execute_task
 
 Delegate a task to OpenSpace. It will search for relevant skills, execute, and auto-evolve skills if needed.
+
+If the risky part is current third-party API behavior rather than execution capability, verify that behavior first with a host-side documentation tool such as Context7. If the risky part is broader live web evidence or page content, verify it first with a host-side web research tool such as Exa. Then pass the confirmed constraints into `execute_task` instead of asking OpenSpace to guess.
 
 ```
 execute_task(task="Monitor Docker containers, find the highest memory one, restart it gracefully", search_scope="all")
@@ -129,4 +132,5 @@ upload_skill(
 - `execute_task` may take minutes — this is expected for multi-step tasks.
 - If `execute_task` times out, first check the host's MCP timeout settings. Changing from `stdio` to HTTP (`sse` or `streamable-http`) does not remove host-side per-call time limits.
 - `upload_skill` requires a cloud API key; if it fails, the evolved skill is still saved locally.
+- Prefer this order for library, framework, or live web work: local repo search, `search_skills`, Context7 if current library or API docs are the missing piece, Exa if broader live web search or page fetch is the missing piece, then `execute_task` for the bounded implementation or verification slice.
 - After every OpenSpace call, **tell the user** what happened: task result, any evolved skills, and your upload decision.
